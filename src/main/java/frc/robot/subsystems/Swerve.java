@@ -27,10 +27,10 @@ public class Swerve extends SubsystemBase {
     gyro.setGyroAngle(IMUAxis.kYaw, 0);
 
     mSwerveMods = new SwerveModule[] {
-      new SwerveModule(0, Constants.Swerve.Mod0.constants),
-      new SwerveModule(1, Constants.Swerve.Mod1.constants),
-      new SwerveModule(2, Constants.Swerve.Mod2.constants),
-      new SwerveModule(3, Constants.Swerve.Mod3.constants)
+      new SwerveModule(Constants.Swerve.FrontLeft.ordinal, Constants.Swerve.FrontLeft.constants),
+      new SwerveModule(Constants.Swerve.FrontRight.ordinal, Constants.Swerve.FrontRight.constants),
+      new SwerveModule(Constants.Swerve.BackLeft.ordinal, Constants.Swerve.BackLeft.constants),
+      new SwerveModule(Constants.Swerve.BackRight.ordinal, Constants.Swerve.BackRight.constants)
     };
 
     swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getGyroYaw(), getModulePositions());

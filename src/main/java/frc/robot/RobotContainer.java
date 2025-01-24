@@ -1,5 +1,11 @@
 package frc.robot;
 
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
@@ -19,7 +25,7 @@ import frc.robot.subsystems.*;
  */
 public class RobotContainer {
   /* Controllers */
-  private final Joystick driver = new Joystick(0);
+  public final Joystick driver = new Joystick(0);
 
   /* Drive Controls */
   private final int translationAxis = XboxController.Axis.kLeftY.value;
@@ -33,8 +39,22 @@ public class RobotContainer {
   /* Subsystems */
   private final Swerve s_Swerve = new Swerve();
 
+  public final SparkMax testSpark1;
+  public final SparkMax testSpark2;
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+
+    testSpark1 = new SparkMax(9, MotorType.kBrushless);
+    testSpark2 = new SparkMax(10, MotorType.kBrushless);
+
+    // var config = new SparkMaxConfig();
+    // config.closedLoop.p(1);
+    // config.closedLoop.i(0);
+    // config.closedLoop.d(0);
+    // testSpark1.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    // testSpark2.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
     s_Swerve.setDefaultCommand(
       new TeleopSwerve(
         s_Swerve, 
@@ -57,7 +77,7 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     /* Driver Buttons */
-    zeroGyro.onTrue(new InstantCommand(() -> s_Swerve.zeroHeading()));
+    // zeroGyro.onTrue(new InstantCommand(() -> s_Swerve.zeroHeading()));
   }
 
   /**
@@ -65,8 +85,8 @@ public class RobotContainer {
    *
    * @return the command to run in autonomous
    */
-  public Command getAutonomousCommand() {
-    // An ExampleCommand will run in autonomous
-    return new exampleAuto(s_Swerve);
-  }
+  // public Command getAutonomousCommand() {
+  //   // An ExampleCommand will run in autonomous
+  //   return new exampleAuto(s_Swerve);
+  // }
 }

@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
@@ -58,7 +59,7 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
@@ -83,7 +84,16 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    // double speed = m_robotContainer.driver.getRawAxis(XboxController.Axis.kLeftY.value);
+    // if(Math.abs(speed) > 0.1) {
+    //   m_robotContainer.testSpark1.set(-speed * 0.8);
+    //   m_robotContainer.testSpark2.set(speed * 0.8);
+    // } else {
+    //   m_robotContainer.testSpark1.set(0);
+    //   m_robotContainer.testSpark2.set(0);
+    // }
+  }
 
   @Override
   public void testInit() {
