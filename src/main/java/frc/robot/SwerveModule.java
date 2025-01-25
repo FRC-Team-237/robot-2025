@@ -10,12 +10,13 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.lib.math.Conversions;
 import frc.lib.util.SwerveModuleConstants;
 
 public class SwerveModule {
   public int moduleNumber;
-  private Rotation2d angleOffset;
 
   private TalonFX mAngleMotor;
   private TalonFX mDriveMotor;
@@ -27,12 +28,15 @@ public class SwerveModule {
   private final DutyCycleOut driveDutyCycle = new DutyCycleOut(0);
   private final VelocityVoltage driveVelocity = new VelocityVoltage(0);
 
+  private final DoubleFromDashboard $zero;
+
   /* angle motor control requests */
   private final PositionVoltage anglePosition = new PositionVoltage(0);
 
   public SwerveModule(int moduleNumber, SwerveModuleConstants moduleConstants){
     this.moduleNumber = moduleNumber;
-    this.angleOffset = moduleConstants.angleOffset;
+
+    $zero = new DoubleFromDashboard("Angle Offset " + moduleNumber, moduleConstants.angleOffset.getRotations());
     
     /* Angle Encoder Config */
     angleEncoder = new CANcoder(moduleConstants.cancoderID);
@@ -47,6 +51,12 @@ public class SwerveModule {
     mDriveMotor = new TalonFX(moduleConstants.driveMotorID);
     mDriveMotor.getConfigurator().apply(Robot.ctreConfigs.swerveDriveFXConfig);
     mDriveMotor.getConfigurator().setPosition(0.0);
+
+    SmartDashboard.putData("Record Zero Module " + moduleNumber, new InstantCommand(() -> {
+      double angleOffset = angleEncoder.getAbsolutePosition().getValueAsDouble();
+      $zero.set(angleOffset);
+      resetToAbsolute();
+    }).ignoringDisable(true));
   }
 
   public void setDesiredState(SwerveModuleState desiredState, boolean isOpenLoop){
@@ -72,7 +82,7 @@ public class SwerveModule {
   }
 
   public void resetToAbsolute(){
-    double absolutePosition = getCANcoder().getRotations() - angleOffset.getRotations();
+    double absolutePosition = getCANcoder().getRotations() - $zero.get();
     mAngleMotor.setPosition(absolutePosition);
   }
 

@@ -61,14 +61,14 @@ public final class Constants {
     public static final double closedLoopRamp = 0.0;
 
     /* Angle Motor PID Values */
-    public static final double angleKP = chosenModule.angleKP;
+    public static final double angleKP = 35.0; //chosenModule.angleKP;
     public static final double angleKI = chosenModule.angleKI;
     public static final double angleKD = chosenModule.angleKD;
 
     /* Drive Motor PID Values */
-    public static final double driveKP = 0.12;
+    public static final double driveKP = 0.025;
     public static final double driveKI = 0.0;
-    public static final double driveKD = 0.0;
+    public static final double driveKD = 0.001;
     public static final double driveKF = 0.0;
 
     /* Drive Motor Characterization Values From SYSID */
