@@ -4,8 +4,11 @@
 
 package frc.robot;
 
+import org.photonvision.PhotonCamera;
+
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
@@ -21,6 +24,8 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
+
+  private PhotonCamera camera = new PhotonCamera("Camera_Module_v1");
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -47,11 +52,27 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+
+    var results = camera.getAllUnreadResults();
+
+    for(var result : results) {
+      var bestTarget = result.getBestTarget();
+      if(bestTarget == null) continue;
+
+      SmartDashboard.putNumber("Best Target/Position/X", bestTarget.getBestCameraToTarget().getX());
+      SmartDashboard.putNumber("Best Target/Position/Y", bestTarget.getBestCameraToTarget().getY());
+      SmartDashboard.putNumber("Best Target/Position/Z", bestTarget.getBestCameraToTarget().getZ());
+      SmartDashboard.putNumber("Best Target/Distance", bestTarget.getBestCameraToTarget().getTranslation().getDistance(Translation3d.kZero));
+      SmartDashboard.putNumber("Best Target/Angle/Pitch", bestTarget.getPitch());
+      SmartDashboard.putNumber("Best Target/Angle/Yaw", bestTarget.getYaw());
+    }
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    m_robotContainer.elevator.letGo();
+  }
 
   @Override
   public void disabledPeriodic() {}
@@ -85,14 +106,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    // double speed = m_robotContainer.driver.getRawAxis(XboxController.Axis.kLeftY.value);
-    // if(Math.abs(speed) > 0.1) {
-    //   m_robotContainer.testSpark1.set(-speed * 0.8);
-    //   m_robotContainer.testSpark2.set(speed * 0.8);
-    // } else {
-    //   m_robotContainer.testSpark1.set(0);
-    //   m_robotContainer.testSpark2.set(0);
-    // }
+
   }
 
   @Override

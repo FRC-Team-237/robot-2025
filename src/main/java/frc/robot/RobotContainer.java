@@ -1,11 +1,5 @@
 package frc.robot;
 
-import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.SparkMaxConfig;
-
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
@@ -85,7 +79,37 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     /* Driver Buttons */
-    // zeroGyro.onTrue(new InstantCommand(() -> s_Swerve.zeroHeading()));
+    zeroGyro.onTrue(new InstantCommand(() -> Swerve.getInstance().zeroHeading()));
+
+    maxHeight.onTrue(new InstantCommand(() -> elevator.setHeight(22)));
+    midHeight.onTrue(new InstantCommand(() -> elevator.setHeight(19.25)));
+    lowHeight.onTrue(new InstantCommand(() -> elevator.setHeight(12)));
+    pickupHeight.onTrue(new InstantCommand(() -> elevator.setHeight(4)));
+
+    dropElevator.onTrue(new InstantCommand(() -> elevator.setHeight(0)));
+
+    elevatorUp
+      .onTrue(new InstantCommand(() -> elevator.moveElevator(ElevatorDirection.UP)))
+      .onFalse(new InstantCommand(() -> elevator.moveElevator(ElevatorDirection.STOP)));
+    elevatorDown
+      .onTrue(new InstantCommand(() -> elevator.moveElevator(ElevatorDirection.DOWN)))
+      .onFalse(new InstantCommand(() -> elevator.moveElevator(ElevatorDirection.STOP)));
+    
+    intakeButton
+      .onTrue(
+        new RunCommand(placer::intake, placer)
+          .until(placer::hasCoral)
+          .andThen(
+            new InstantCommand(placer::stop, placer)
+          )
+      )
+      .onFalse(new InstantCommand(placer::stop, placer));
+
+    outtakeButton
+      .onTrue(new InstantCommand(placer::outtake))
+      .onFalse(new InstantCommand(placer::stop));
+    
+    lockOn.onTrue(new LockOnTag());
   }
 
   /**
