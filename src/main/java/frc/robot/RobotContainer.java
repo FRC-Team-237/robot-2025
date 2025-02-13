@@ -9,13 +9,13 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-
-import frc.robot.autos.*;
+import edu.wpi.first.wpilibj2.command.button.POVButton;
 import frc.robot.commands.*;
 import frc.robot.subsystems.*;
+import frc.robot.subsystems.Elevator.ElevatorDirection;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -26,6 +26,7 @@ import frc.robot.subsystems.*;
 public class RobotContainer {
   /* Controllers */
   public final Joystick driver = new Joystick(0);
+  private final Joystick panel = new Joystick(1);
 
   /* Drive Controls */
   private final int translationAxis = XboxController.Axis.kLeftY.value;
@@ -35,32 +36,39 @@ public class RobotContainer {
   /* Driver Buttons */
   private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kY.value);
   private final JoystickButton robotCentric = new JoystickButton(driver, XboxController.Button.kLeftBumper.value);
+  private final JoystickButton lockOn = new JoystickButton(driver, XboxController.Button.kRightBumper.value);
+  private final POVButton intakeButton = new POVButton(driver, 0);
+  private final POVButton outtakeButton = new POVButton(driver, 180);
+
+  /* Panel Buttons */
+  
+  private final JoystickButton maxHeight = new JoystickButton(panel, 10);
+  private final JoystickButton midHeight = new JoystickButton(panel, 9);
+  private final JoystickButton lowHeight = new JoystickButton(panel, 8);
+  private final JoystickButton pickupHeight = new JoystickButton(panel, 12);
+  private final JoystickButton dropElevator = new JoystickButton(panel, 7);
+
+  // private final POVButton angleForward = new POVButton(driver, 0);
+  // private final POVButton angleLeft = new POVButton(driver, 90);
+  // private final POVButton angleBackward = new POVButton(driver, 180);
+  // private final POVButton angleRight = new POVButton(driver, 270);
+
+  public final JoystickButton elevatorUp = new JoystickButton(panel, 13);
+  public final JoystickButton elevatorDown = new JoystickButton(panel, 14);
 
   /* Subsystems */
-  private final Swerve s_Swerve = new Swerve();
-
-  public final SparkMax testSpark1;
-  public final SparkMax testSpark2;
+  public final Elevator elevator = new Elevator();
+  public final Placer placer = new Placer();
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
 
-    testSpark1 = new SparkMax(9, MotorType.kBrushless);
-    testSpark2 = new SparkMax(10, MotorType.kBrushless);
-
-    // var config = new SparkMaxConfig();
-    // config.closedLoop.p(1);
-    // config.closedLoop.i(0);
-    // config.closedLoop.d(0);
-    // testSpark1.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    // testSpark2.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-    s_Swerve.setDefaultCommand(
+    Swerve.getInstance().setDefaultCommand(
       new TeleopSwerve(
-        s_Swerve, 
-        () -> -driver.getRawAxis(translationAxis), 
-        () -> -driver.getRawAxis(strafeAxis), 
-        () -> -driver.getRawAxis(rotationAxis), 
+        Swerve.getInstance(),
+        () -> -driver.getRawAxis(translationAxis),
+        () -> -driver.getRawAxis(strafeAxis),
+        () -> -driver.getRawAxis(rotationAxis),
         () -> robotCentric.getAsBoolean()
       )
     );
