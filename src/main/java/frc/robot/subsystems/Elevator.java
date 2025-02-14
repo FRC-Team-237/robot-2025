@@ -25,12 +25,12 @@ public class Elevator extends SubsystemBase {
   public boolean isManualMoving = false;
 
   private Timer easeTimer = new Timer();
-  private PIDController heightPID = new PIDController(16, 0.8, 0.08);
+  private PIDController heightPID = new PIDController(28, 1.875, 0.0);
   private Optional<Double> heightSetpoint = Optional.empty();
 
-  private final double lowestValue = 1.0;
+  private final double lowestValue = 0.0;
   private final double highestValue = 34.0;
-  private final double weightOffest = 9.5;
+  private final double weightOffest = 4.85;
 
   private DigitalInput zeroSensor = new DigitalInput(1);
 
@@ -40,7 +40,7 @@ public class Elevator extends SubsystemBase {
     var slot0Configs = configs.Slot0;
     slot0Configs.kS = 0.01;
     slot0Configs.kV = 0.12;
-    slot0Configs.kP = 0.002;
+    slot0Configs.kP = 0.0025;
 
     motor1.getConfigurator().apply(configs);
     motor2.getConfigurator().apply(configs);
@@ -58,9 +58,10 @@ public class Elevator extends SubsystemBase {
 
   @Override
   public void periodic() {
-    if (zeroSensor.get()) {
+    if(!zeroSensor.get()) {
       resetPosition();
     }
+    SmartDashboard.putBoolean("Elevator/Zero", !zeroSensor.get());
     double currentPosition = motor1.getPosition().getValueAsDouble();
     double easeValue = MathUtil.clamp(easeTimer.get() * 2, 0, 1);
 
@@ -91,7 +92,7 @@ public class Elevator extends SubsystemBase {
       setHeight(highestValue);
     }
 
-    if(isMovingDown && currentPosition <= lowestValue) {
+    if(isMovingDown && currentPosition <= lowestValue + 0.8) {
       letGo();
     }
 
