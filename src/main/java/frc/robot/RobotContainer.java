@@ -34,6 +34,10 @@ public class RobotContainer {
   private final POVButton intakeButton = new POVButton(driver, 0);
   private final POVButton outtakeButton = new POVButton(driver, 180);
 
+  private final JoystickButton clawIntake = new JoystickButton(driver, XboxController.Button.kX.value);
+  private final JoystickButton clawRaise = new JoystickButton(driver, XboxController.Button.kB.value);
+  private final JoystickButton clawLower = new JoystickButton(driver, XboxController.Button.kA.value);
+
   /* Panel Buttons */
   
   private final JoystickButton maxHeight = new JoystickButton(panel, 10);
@@ -53,6 +57,7 @@ public class RobotContainer {
   /* Subsystems */
   public final Elevator elevator = new Elevator();
   public final Placer placer = new Placer();
+  public final Claw claw = new Claw();
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -84,7 +89,7 @@ public class RobotContainer {
     maxHeight.onTrue(new InstantCommand(() -> elevator.setHeight(22)));
     midHeight.onTrue(new InstantCommand(() -> elevator.setHeight(19.25)));
     lowHeight.onTrue(new InstantCommand(() -> elevator.setHeight(12)));
-    pickupHeight.onTrue(new InstantCommand(() -> elevator.setHeight(4)));
+    pickupHeight.onTrue(new InstantCommand(() -> elevator.setHeight(6)));
 
     dropElevator.onTrue(new InstantCommand(() -> elevator.setHeight(0)));
 
@@ -108,6 +113,18 @@ public class RobotContainer {
     outtakeButton
       .onTrue(new InstantCommand(placer::outtake))
       .onFalse(new InstantCommand(placer::stop));
+    
+    clawIntake
+      .onTrue(new InstantCommand(claw::intake))
+      .whileFalse(new InstantCommand(claw::stopIntake));
+    
+    clawRaise
+      .onTrue(new InstantCommand(claw::raiseClaw))
+      .onFalse(new InstantCommand(claw::stopClawPosition));
+    
+    clawLower
+      .onTrue(new InstantCommand(claw::lowerClaw))
+      .onFalse(new InstantCommand(claw::stopClawPosition));
     
     lockOn.onTrue(new LockOnTag());
   }
