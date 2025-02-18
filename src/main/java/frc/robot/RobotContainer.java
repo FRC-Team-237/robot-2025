@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
 import frc.robot.commands.*;
 import frc.robot.subsystems.*;
-import frc.robot.subsystems.Elevator.ElevatorDirection;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -28,13 +27,14 @@ public class RobotContainer {
   private final int rotationAxis = XboxController.Axis.kRightX.value;
 
   /* Driver Buttons */
-  private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kY.value);
+  // private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kY.value);
   private final JoystickButton robotCentric = new JoystickButton(driver, XboxController.Button.kLeftBumper.value);
   private final JoystickButton lockOn = new JoystickButton(driver, XboxController.Button.kRightBumper.value);
   private final POVButton intakeButton = new POVButton(driver, 0);
   private final POVButton outtakeButton = new POVButton(driver, 180);
 
   private final JoystickButton clawIntake = new JoystickButton(driver, XboxController.Button.kX.value);
+  private final JoystickButton clawOuttake = new JoystickButton(driver, XboxController.Button.kY.value);
   private final JoystickButton clawRaise = new JoystickButton(driver, XboxController.Button.kB.value);
   private final JoystickButton clawLower = new JoystickButton(driver, XboxController.Button.kA.value);
 
@@ -43,7 +43,8 @@ public class RobotContainer {
   private final JoystickButton maxHeight = new JoystickButton(panel, 10);
   private final JoystickButton midHeight = new JoystickButton(panel, 9);
   private final JoystickButton lowHeight = new JoystickButton(panel, 8);
-  private final JoystickButton pickupHeight = new JoystickButton(panel, 12);
+  private final JoystickButton pickupHeight = new JoystickButton(panel, 7);
+  private final JoystickButton lowCoral = new JoystickButton(panel, 12);
   private final JoystickButton dropElevator = new JoystickButton(panel, 7);
 
   // private final POVButton angleForward = new POVButton(driver, 0);
@@ -84,21 +85,24 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     /* Driver Buttons */
-    zeroGyro.onTrue(new InstantCommand(() -> Swerve.getInstance().zeroHeading()));
-
-    maxHeight.onTrue(new InstantCommand(() -> elevator.setHeight(22)));
-    midHeight.onTrue(new InstantCommand(() -> elevator.setHeight(19.25)));
-    lowHeight.onTrue(new InstantCommand(() -> elevator.setHeight(12)));
-    pickupHeight.onTrue(new InstantCommand(() -> elevator.setHeight(6)));
-
-    dropElevator.onTrue(new InstantCommand(() -> elevator.setHeight(0)));
+    // zeroGyro.onTrue(new InstantCommand(() -> Swerve.getInstance().zeroHeading()));
 
     elevatorUp
-      .onTrue(new InstantCommand(() -> elevator.moveElevator(ElevatorDirection.UP)))
-      .onFalse(new InstantCommand(() -> elevator.moveElevator(ElevatorDirection.STOP)));
+      .onTrue(new InstantCommand(() -> elevator.move(3)))
+      .onFalse(new InstantCommand(elevator::drop));
+    
     elevatorDown
-      .onTrue(new InstantCommand(() -> elevator.moveElevator(ElevatorDirection.DOWN)))
-      .onFalse(new InstantCommand(() -> elevator.moveElevator(ElevatorDirection.STOP)));
+      .onTrue(new InstantCommand(() -> elevator.move(-1.25)))
+      .onFalse(new InstantCommand(elevator::drop));
+    
+    lowHeight
+      .onTrue(new InstantCommand(() -> elevator.setGoal(1.0)));
+
+    maxHeight.onTrue(new InstantCommand(() -> elevator.setGoal(4.2414)));
+    midHeight.onTrue(new InstantCommand(() -> elevator.setGoal(2.7495)));
+    lowHeight.onTrue(new InstantCommand(() -> elevator.setGoal(1.6829)));
+    lowCoral.onTrue(new InstantCommand(() -> elevator.setGoal(1.226)));
+    pickupHeight.onTrue(new InstantCommand(() -> elevator.setGoal(0.76928)));
     
     intakeButton
       .onTrue(
@@ -116,7 +120,11 @@ public class RobotContainer {
     
     clawIntake
       .onTrue(new InstantCommand(claw::intake))
-      .whileFalse(new InstantCommand(claw::stopIntake));
+      .onFalse(new InstantCommand(claw::stopIntake));
+    
+    clawOuttake
+      .onTrue(new InstantCommand(claw::outtake))
+      .onFalse(new InstantCommand(claw::stopIntake));
     
     clawRaise
       .onTrue(new InstantCommand(claw::raiseClaw))

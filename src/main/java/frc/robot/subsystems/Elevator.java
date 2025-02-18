@@ -1,178 +1,248 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
 import java.util.Optional;
+
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
+import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Elevator extends SubsystemBase {
-  public enum ElevatorDirection { UP, DOWN, STOP }
 
-  private TalonFX motor1 = new TalonFX(30);
-  private TalonFX motor2 = new TalonFX(31);
+  private final double LOWEST_POSITION = 0.2;
+  private final double HIGHEST_POSITION = 4.35;
+  private final int POSITION_SLOT = 0;
+  private final int VELOCITY_SLOT = 1;
+  private final int NEUTRAL_SLOT = 2;
+  private final TalonFX motor1 = new TalonFX(30);
+  private final TalonFX motor2 = new TalonFX(31);
 
-  double desiredVelocity = 0.0;
-
-  public boolean isMovingDown = false;
-  public boolean isManualMoving = false;
+  private final double minVoltageToMove = 0.25;
+  private final double gearRatio = 7.75/1.0;
+  private final double dt = 0.02;
 
   private Timer easeTimer = new Timer();
-  private PIDController heightPID = new PIDController(28, 1.875, 0.0);
-  private Optional<Double> heightSetpoint = Optional.empty();
 
-  private final double lowestValue = 0.0;
-  private final double highestValue = 34.0;
-  private final double weightOffest = 4.85;
+  private final double dynamicG = 0.5;
+  private final double dynamicV = 0.1;
+  private final double dynamicA = 0.0;
 
-  private DigitalInput zeroSensor = new DigitalInput(1);
+  private final double dynamicP = 1.0;
+  private final double dynamicI = 0.0;
+  private final double dynamicD = 0.0;
 
+  private TrapezoidProfile profile;
+  private TrapezoidProfile.State currentState = new TrapezoidProfile.State();
+  private Optional<TrapezoidProfile.State> goal = Optional.empty();
 
-  public Elevator() {
-    var configs = new TalonFXConfiguration();
-    var slot0Configs = configs.Slot0;
-    slot0Configs.kS = 0.01;
-    slot0Configs.kV = 0.12;
-    slot0Configs.kP = 0.0025;
+  private double desiredVelocity = 0.0;
 
+  private final double maxVelocity = 3.0;
+  private final double maxAcceleration = 2.5;
+
+  private final double staticG = 0.7;
+  private final double staticV = 3.5;
+  private final double staticA = 0.5;
+
+  private final double staticP = 14.0;
+  private final double staticI = 1.4;
+  private final double staticD = 0.14;
+
+  private final DigitalInput zeroSensor = new DigitalInput(1);
+  private final DigitalInput maxSensor = new DigitalInput(2);
+
+  private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(minVoltageToMove, 0.25);
+
+  private boolean isManualMoving = false;
+  private boolean isMovingDown = false;
+  
+  private TalonFXConfiguration configs = new TalonFXConfiguration()
+    // position control
+    .withSlot0(
+      new Slot0Configs()
+        .withKG(staticG)
+        .withKV(staticV)
+        .withKA(staticA)
+        .withKP(staticP)
+        .withKI(staticI)
+        .withKD(staticD)
+    )
+    // velocity control
+    .withSlot1(
+      new Slot1Configs()
+        .withKG(dynamicG)
+        .withKV(dynamicV)
+        .withKA(dynamicA)
+        .withKP(dynamicP)
+        .withKI(dynamicI)
+        .withKD(dynamicD)
+    )
+    // neutral control
+    .withSlot2(
+      new Slot2Configs()
+        .withKG(0.0)
+        .withKV(0.0)
+        .withKA(0.0)
+        .withKP(0.0)
+        .withKI(0.0)
+        .withKD(0.0)
+    )
+    .withFeedback(
+      new FeedbackConfigs()
+        .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
+        .withSensorToMechanismRatio(gearRatio)
+    );
+
+  private void setMotorProfile() {
+    profile = new TrapezoidProfile(
+      new TrapezoidProfile.Constraints(
+        maxVelocity,
+        maxAcceleration
+      )
+    );
     motor1.getConfigurator().apply(configs);
     motor2.getConfigurator().apply(configs);
-
     motor1.setNeutralMode(NeutralModeValue.Brake);
     motor2.setNeutralMode(NeutralModeValue.Brake);
-
-    resetPosition();
   }
 
-  public void resetPosition() {
+  public Elevator() {
+    setMotorProfile();
+    drop();
     motor1.setPosition(0);
     motor2.setPosition(0);
   }
 
-  @Override
-  public void periodic() {
-    if(!zeroSensor.get()) {
-      resetPosition();
-    }
-    SmartDashboard.putBoolean("Elevator/Zero", !zeroSensor.get());
-    double currentPosition = motor1.getPosition().getValueAsDouble();
-    double easeValue = MathUtil.clamp(easeTimer.get() * 2, 0, 1);
-
-    if(isManualMoving) {
-      double newVelocity = easeValue * desiredVelocity;
-  
-      setVelocity(newVelocity);
-    } else {
-
-      if(heightSetpoint.isPresent()) {
-        double delta = heightPID.calculate(currentPosition);
-
-        double clampedDelta = Math.min(Math.max(delta, -5), 25);
-
-        double distance = Math.abs(currentPosition - heightSetpoint.get());
-        if(distance < 0.5) {
-          clampedDelta += weightOffest;
-        }
-
-        double newVelocity = easeValue * clampedDelta;
-
-        setVelocity(newVelocity);
-      }
-    }
-
-    if(currentPosition >= highestValue) {
-      setVelocity(0);
-      setHeight(highestValue);
-    }
-
-    if(isMovingDown && currentPosition <= lowestValue + 0.8) {
-      letGo();
-    }
-
-    SmartDashboard.putNumber("Elevator/Height", currentPosition);
-  }
-
-  public void letGo() {
-    heightSetpoint = Optional.empty();
-    heightPID.setSetpoint(0);
+  public void setGoal(double height) {
+    height = MathUtil.clamp(height, 0, HIGHEST_POSITION);
     isManualMoving = false;
-    isMovingDown = false;
-    setVelocity(0);
+    double position = motor1.getPosition().getValueAsDouble();
+    double velocity = motor1.getVelocity().getValueAsDouble();
+
+    isMovingDown = position > height;
+
+    currentState = new TrapezoidProfile.State(position, velocity);
+
+    goal = Optional.of(new TrapezoidProfile.State(height, 0));
   }
 
-  public void setHeight(double height) {
-    if(height < lowestValue) height = lowestValue;
-    if(height > highestValue) height = highestValue;
-
-    easeTimer.reset();
-    easeTimer.start();
-
-    double currentPosition = motor1.getPosition().getValueAsDouble();
-    isMovingDown = currentPosition > height;
-    isManualMoving = false;
-    heightSetpoint = Optional.of(height);
-    heightPID.setSetpoint(height);
-  }
-
-  public void setVelocity(double rps) {
-    motor1.setControl(
-      new VelocityVoltage(rps)
-    );
-    motor2.setControl(
-      new VelocityVoltage(rps)
-    );
-  }
-
-  ElevatorDirection previousDirection = ElevatorDirection.STOP;
-
-  public void moveElevator(ElevatorDirection direction) {
-    double upSpeed = 15;
-    double downSpeed = 10;
-    var currentPosition = motor1.getPosition().getValueAsDouble();
-    var isSwitchingDirections = direction != previousDirection;
-
-    isMovingDown = false;
+  public void move(double rps) {
+    var isSwitchingDirections = !isManualMoving || Math.signum(motor1.getVelocity().getValueAsDouble()) != Math.signum(rps);
     isManualMoving = true;
-
+    isMovingDown = rps < 0;
+    goal = Optional.empty();
+    desiredVelocity = rps;
     if(isSwitchingDirections) {
       easeTimer.reset();
       easeTimer.start();
     }
+  }
 
-    heightSetpoint = Optional.empty();
-    heightPID.setSetpoint(0);
+  public void stop() {
+    var currentPosition = motor1.getPosition().getValueAsDouble();
 
-    switch(direction) {
-      case UP: {
-        desiredVelocity = upSpeed;
-        break;
-      }
-      case DOWN: {
-        desiredVelocity = -downSpeed;
-        isMovingDown = true;
-        break;
-      }
-      case STOP: {
-        desiredVelocity = 0;
-        setVelocity(0);
-        isManualMoving = false;
-        break;
-      }
-      default: {
-        desiredVelocity = 0;
-        setVelocity(0);
-        isManualMoving = false;
-        break;
-      }
+    setGoal(currentPosition);
+  }
+
+  public void drop() {
+    isManualMoving = false;
+    isMovingDown = false;
+    goal = Optional.empty();
+    motor1.setControl(
+      new VelocityVoltage(0)
+        .withSlot(NEUTRAL_SLOT)
+    );
+    motor2.setControl(
+      new VelocityVoltage(0)
+        .withSlot(NEUTRAL_SLOT)
+    );
+  }
+
+  @Override
+  public void periodic() {
+    double sensorPosition = motor1.getPosition().getValueAsDouble();
+    double sensorVelocity = motor1.getVelocity().getValueAsDouble();
+    SmartDashboard.putNumber("Elevator/Height", sensorPosition);
+    SmartDashboard.putNumber("Elevator/Velocity", sensorVelocity);
+    SmartDashboard.putBoolean("Elevator/Zero", !zeroSensor.get());
+    SmartDashboard.putBoolean("Elevator/Max", !maxSensor.get());
+    SmartDashboard.putNumber("Elevator/Ease Timer", MathUtil.clamp(easeTimer.get() * 2.0, 0, 1));
+    SmartDashboard.putBoolean("Elevator/Manual Moving", isManualMoving);
+    SmartDashboard.putBoolean("Elevator/Moving Down", isMovingDown);
+    if(!zeroSensor.get()) {
+      motor1.setPosition(0);
+      motor2.setPosition(0);
     }
 
-    previousDirection = direction;
+    // stop motors if it's moving down and almost near the bottom
+    if(isMovingDown && sensorPosition < LOWEST_POSITION) {
+      motor1.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
+      motor2.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
+      return;
+    }
+
+    // stop motors if the top limit switch hits (hard stop)
+    if(!maxSensor.get()) {
+      motor1.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
+      motor2.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
+      return;
+    }
+    
+    // stop motors if it's moving up and almost near the top (soft stop)
+    if(!isMovingDown && sensorPosition > HIGHEST_POSITION) {
+      motor1.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
+      motor2.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
+      return;
+    }
+    
+    if(goal.isPresent()) {
+      currentState = profile.calculate(dt, currentState, goal.get());
+      double ffVoltage = feedforward.calculate(currentState.velocity);
+      SmartDashboard.putNumber("Elevator/Hold FF Voltage", ffVoltage);
+
+      if(Math.abs(sensorPosition - goal.get().position) > 0.025) {
+        var request = new PositionVoltage(currentState.position)
+          .withFeedForward(ffVoltage)
+          .withSlot(POSITION_SLOT);
+        
+        motor1.setControl(request);
+        motor2.setControl(request);
+      } else {
+        var request = new PositionVoltage(sensorPosition)
+          .withFeedForward(ffVoltage)
+          .withSlot(POSITION_SLOT);
+        
+        motor1.setControl(request);
+        motor2.setControl(request);
+      }
+
+    } else {
+      if(!isManualMoving) {
+        motor1.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
+        motor2.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
+      } else {
+        double easeValue = MathUtil.clamp(easeTimer.get() * 2.0, 0, 1);
+        double newVelocity = easeValue * desiredVelocity;
+
+        motor1.setControl(new VelocityVoltage(RotationsPerSecond.of(newVelocity)).withSlot(VELOCITY_SLOT));
+        motor2.setControl(new VelocityVoltage(RotationsPerSecond.of(newVelocity)).withSlot(VELOCITY_SLOT));
+      }
+    }
   }
 }

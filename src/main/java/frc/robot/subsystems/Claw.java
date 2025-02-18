@@ -22,6 +22,10 @@ public class Claw extends SubsystemBase {
     clawIntake.configure(intakeConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
+  public void outtake() {
+    clawIntake.set(0.5);
+  }
+
   public void intake() {
     clawIntake.set(-0.5);
   }
@@ -35,11 +39,11 @@ public class Claw extends SubsystemBase {
   }
 
   public void raiseClaw() {
-    clawPosition.set(0.15);
+    clawPosition.set(0.5);
   }
 
   public void lowerClaw() {
-    clawPosition.set(-0.15);
+    clawPosition.set(-0.5);
   }
 
   @Override
