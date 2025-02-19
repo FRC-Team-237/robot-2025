@@ -59,6 +59,7 @@ public class RobotContainer {
   public final Elevator elevator = new Elevator();
   public final Placer placer = new Placer();
   public final Claw claw = new Claw();
+  // public final Music music = new Music();
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {

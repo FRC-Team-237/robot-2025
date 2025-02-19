@@ -1,6 +1,7 @@
 package frc.robot.commands;
 
 import frc.robot.Constants;
+import frc.robot.MathUtils;
 import frc.robot.subsystems.Swerve;
 
 import java.util.function.BooleanSupplier;
@@ -31,9 +32,9 @@ public class TeleopSwerve extends Command {
   @Override
   public void execute() {
     /* Get Values, Deadband*/
-    double translationVal = MathUtil.applyDeadband(translationSup.getAsDouble(), Constants.stickDeadband);
-    double strafeVal = MathUtil.applyDeadband(strafeSup.getAsDouble(), Constants.stickDeadband);
-    double rotationVal = MathUtil.applyDeadband(rotationSup.getAsDouble(), Constants.stickDeadband);
+    double translationVal = MathUtils.smoothInput(MathUtil.applyDeadband(translationSup.getAsDouble(), Constants.stickDeadband), 2.0);
+    double strafeVal = MathUtils.smoothInput(MathUtil.applyDeadband(strafeSup.getAsDouble(), Constants.stickDeadband), 2.0);
+    double rotationVal = MathUtils.smoothInput(MathUtil.applyDeadband(rotationSup.getAsDouble(), Constants.stickDeadband), 2.0);
 
     /* Drive */
     s_Swerve.drive(

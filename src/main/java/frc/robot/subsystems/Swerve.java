@@ -8,6 +8,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 
+import com.ctre.phoenix6.hardware.TalonFX;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -23,7 +25,11 @@ public class Swerve extends SubsystemBase {
   public SwerveModule[] mSwerveMods;
   public ADIS16470_IMU gyro;
 
+  private static final double MAX_HEIGHT = 4.35;
+  private static final double MIN_SPEED = 0.01;
+
   private PIDController anglePIDController = new PIDController(0.06, 0, 0.1);
+  private TalonFX elevatorMotor = new TalonFX(30);
   private boolean angleTargetEnabled = false;
 
   private static Swerve instance;
@@ -57,6 +63,10 @@ public class Swerve extends SubsystemBase {
     anglePIDController.enableContinuousInput(-180, 180);
   }
 
+  private double heightSpeedMultiplier() {
+    return ((MIN_SPEED - 1) / MAX_HEIGHT) * elevatorMotor.getPosition().getValueAsDouble() + 1;
+  }
+
   public boolean atTargetAngle() {
     return anglePIDController.atSetpoint(); 
   }
@@ -72,6 +82,10 @@ public class Swerve extends SubsystemBase {
         rotation = anglePIDController.calculate(getGyroYaw().getDegrees());
       }
     }
+
+    var multiplier = heightSpeedMultiplier();
+
+    translation = translation.times(multiplier);
 
     SwerveModuleState[] swerveModuleStates =
       Constants.Swerve.swerveKinematics.toSwerveModuleStates(
@@ -164,6 +178,9 @@ public class Swerve extends SubsystemBase {
   @Override
   public void periodic() {
     swerveOdometry.update(getGyroYaw(), getModulePositions());
+
+    SmartDashboard.putNumber("Swerve/Elevator Height", elevatorMotor.getPosition().getValueAsDouble());
+    SmartDashboard.putNumber("Swerve/Elevator heightSpeedMultiplier", heightSpeedMultiplier());
 
     for(SwerveModule mod : mSwerveMods){
       SmartDashboard.putNumber("Mod " + mod.moduleNumber + " CANcoder", mod.getCANcoder().getDegrees());
