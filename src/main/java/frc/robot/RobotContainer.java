@@ -1,8 +1,10 @@
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -44,8 +46,16 @@ public class RobotContainer {
   private final JoystickButton midHeight = new JoystickButton(panel, 9);
   private final JoystickButton lowHeight = new JoystickButton(panel, 8);
   private final JoystickButton pickupHeight = new JoystickButton(panel, 7);
-  private final JoystickButton lowCoral = new JoystickButton(panel, 12);
+  private final JoystickButton lowAlgae = new JoystickButton(panel, 12);
   private final JoystickButton dropElevator = new JoystickButton(panel, 7);
+
+  private final JoystickButton farMiddle = new JoystickButton(panel, 1);
+  private final JoystickButton farRight = new JoystickButton(panel, 2);
+  private final JoystickButton closeRight = new JoystickButton(panel, 3);
+  private final JoystickButton closeMiddle = new JoystickButton(panel, 4);
+  private final JoystickButton closeLeft = new JoystickButton(panel, 5);
+  private final JoystickButton farLeft = new JoystickButton(panel, 6);
+
 
   // private final POVButton angleForward = new POVButton(driver, 0);
   // private final POVButton angleLeft = new POVButton(driver, 90);
@@ -96,25 +106,25 @@ public class RobotContainer {
       .onTrue(new InstantCommand(() -> elevator.move(-1.25)))
       .onFalse(new InstantCommand(elevator::drop));
     
-    lowHeight
-      .onTrue(new InstantCommand(() -> elevator.setGoal(1.0)));
-
-    maxHeight.onTrue(new InstantCommand(() -> elevator.setGoal(4.2414)));
-    midHeight.onTrue(new InstantCommand(() -> elevator.setGoal(2.7495)));
-    lowHeight.onTrue(new InstantCommand(() -> elevator.setGoal(1.6829)));
-    lowCoral.onTrue(new InstantCommand(() -> elevator.setGoal(1.226)));
-    pickupHeight.onTrue(new InstantCommand(() -> elevator.setGoal(0.76928)));
+    maxHeight.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.MAX_HEIGHT)));
+    midHeight.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.MID_HEIGHT)));
+    lowHeight.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.LOW_HEIGHT)));
+    lowAlgae.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.LOW_ALGAE_HEIGHT)));
+    pickupHeight.onTrue(
+      new InstantCommand(() -> elevator.setGoal(Elevator.INTAKE_HEIGHT))
+      .andThen(new RunCommand(placer::intake, placer)
+        .until(() -> !elevator.isGoingToIntake())
+        .until(placer::hasCoral)
+        .andThen(
+          new InstantCommand(placer::stop, placer)
+        )
+      )
+    );
     
     intakeButton
-      .onTrue(
-        new RunCommand(placer::intake, placer)
-          .until(placer::hasCoral)
-          .andThen(
-            new InstantCommand(placer::stop, placer)
-          )
-      )
+      .onTrue(new InstantCommand(placer::spitCoral, placer))
       .onFalse(new InstantCommand(placer::stop, placer));
-
+    
     outtakeButton
       .onTrue(new InstantCommand(placer::outtake))
       .onFalse(new InstantCommand(placer::stop));
@@ -128,14 +138,20 @@ public class RobotContainer {
       .onFalse(new InstantCommand(claw::stopIntake));
     
     clawRaise
-      .onTrue(new InstantCommand(claw::raiseClaw))
-      .onFalse(new InstantCommand(claw::stopClawPosition));
+      .onTrue(new InstantCommand(claw::raiseClaw, claw))
+      .onFalse(new InstantCommand(claw::stopClawPosition, claw));
     
     clawLower
-      .onTrue(new InstantCommand(claw::lowerClaw))
-      .onFalse(new InstantCommand(claw::stopClawPosition));
+      .onTrue(new InstantCommand(claw::lowerClaw));
     
     lockOn.onTrue(new LockOnTag());
+
+    farMiddle.onTrue(new TurnToAngle(Rotation2d.fromDegrees(180)));
+    farRight.onTrue(new TurnToAngle(Rotation2d.fromDegrees(120)));
+    closeRight.onTrue(new TurnToAngle(Rotation2d.fromDegrees(60)));
+    closeMiddle.onTrue(new TurnToAngle(Rotation2d.fromDegrees(0)));
+    closeLeft.onTrue(new TurnToAngle(Rotation2d.fromDegrees(-120)));
+    farLeft.onTrue(new TurnToAngle(Rotation2d.fromDegrees(-60)));
   }
 
   /**

@@ -18,6 +18,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.ADIS16470_IMU;
 import edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Swerve extends SubsystemBase {
@@ -26,11 +27,13 @@ public class Swerve extends SubsystemBase {
   public ADIS16470_IMU gyro;
 
   private static final double MAX_HEIGHT = 4.35;
-  private static final double MIN_SPEED = 0.01;
+  private static final double MIN_SPEED = 0.1;
 
   private PIDController anglePIDController = new PIDController(0.06, 0, 0.1);
   private TalonFX elevatorMotor = new TalonFX(30);
   private boolean angleTargetEnabled = false;
+
+  private double initialAngleOffset = 0;
 
   private static Swerve instance;
 
@@ -45,6 +48,8 @@ public class Swerve extends SubsystemBase {
   public Swerve() {
     gyro = new ADIS16470_IMU();
     gyro.setGyroAngle(IMUAxis.kYaw, 0);
+
+    SmartDashboard.putData("Swerve/Zero Gyro", new InstantCommand(() -> gyro.setGyroAngle(IMUAxis.kYaw, 0)).ignoringDisable(true));
 
     mSwerveMods = new SwerveModule[] {
       new SwerveModule(Constants.Swerve.FrontLeft.ordinal, Constants.Swerve.FrontLeft.constants),
@@ -64,7 +69,14 @@ public class Swerve extends SubsystemBase {
   }
 
   private double heightSpeedMultiplier() {
-    return ((MIN_SPEED - 1) / MAX_HEIGHT) * elevatorMotor.getPosition().getValueAsDouble() + 1;
+    double height = elevatorMotor.getPosition().getValueAsDouble();
+
+    // LINEAR
+    // return ((MIN_SPEED - 1) / MAX_HEIGHT) * elevatorMotor.getPosition().getValueAsDouble() + 1;
+
+    // INVERSE
+    double power = (MIN_SPEED * MAX_HEIGHT) / (1 - MIN_SPEED);
+    return power / (height + power);
   }
 
   public boolean atTargetAngle() {
@@ -161,12 +173,12 @@ public class Swerve extends SubsystemBase {
   }
 
   public void zeroHeading() {
-    gyro.setGyroAngle(IMUAxis.kYaw, 0);
+    gyro.setGyroAngle(IMUAxis.kYaw, 180);
     // swerveOdometry.resetPosition(getGyroYaw(), getModulePositions(), new Pose2d(getPose().getTranslation(), new Rotation2d()));
   }
 
   public Rotation2d getGyroYaw() {
-    return Rotation2d.fromDegrees(gyro.getAngle(IMUAxis.kYaw));
+    return Rotation2d.fromDegrees(gyro.getAngle(IMUAxis.kYaw)).plus(Rotation2d.fromDegrees(initialAngleOffset));
   }
 
   public void resetModulesToAbsolute() {
@@ -181,6 +193,8 @@ public class Swerve extends SubsystemBase {
 
     SmartDashboard.putNumber("Swerve/Elevator Height", elevatorMotor.getPosition().getValueAsDouble());
     SmartDashboard.putNumber("Swerve/Elevator heightSpeedMultiplier", heightSpeedMultiplier());
+
+    SmartDashboard.putNumber("Swerve/Heading", getGyroYaw().getDegrees());
 
     for(SwerveModule mod : mSwerveMods){
       SmartDashboard.putNumber("Mod " + mod.moduleNumber + " CANcoder", mod.getCANcoder().getDegrees());

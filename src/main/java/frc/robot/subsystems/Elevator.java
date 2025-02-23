@@ -25,6 +25,12 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Elevator extends SubsystemBase {
 
+  public static double MAX_HEIGHT = 4.2414;
+  public static double MID_HEIGHT = 2.7495;
+  public static double LOW_HEIGHT = 1.6829;
+  public static double LOW_ALGAE_HEIGHT = 1.226;
+  public static double INTAKE_HEIGHT = 0.76928;
+
   private final double LOWEST_POSITION = 0.2;
   private final double HIGHEST_POSITION = 4.35;
   private final int POSITION_SLOT = 0;
@@ -49,7 +55,7 @@ public class Elevator extends SubsystemBase {
 
   private TrapezoidProfile profile;
   private TrapezoidProfile.State currentState = new TrapezoidProfile.State();
-  private Optional<TrapezoidProfile.State> goal = Optional.empty();
+  public Optional<TrapezoidProfile.State> goal = Optional.empty();
 
   private double desiredVelocity = 0.0;
 
@@ -65,7 +71,7 @@ public class Elevator extends SubsystemBase {
   private final double staticD = 0.14;
 
   private final DigitalInput zeroSensor = new DigitalInput(1);
-  private final DigitalInput maxSensor = new DigitalInput(2);
+  
 
   private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(minVoltageToMove, 0.25);
 
@@ -181,10 +187,14 @@ public class Elevator extends SubsystemBase {
     SmartDashboard.putNumber("Elevator/Height", sensorPosition);
     SmartDashboard.putNumber("Elevator/Velocity", sensorVelocity);
     SmartDashboard.putBoolean("Elevator/Zero", !zeroSensor.get());
-    SmartDashboard.putBoolean("Elevator/Max", !maxSensor.get());
     SmartDashboard.putNumber("Elevator/Ease Timer", MathUtil.clamp(easeTimer.get() * 2.0, 0, 1));
     SmartDashboard.putBoolean("Elevator/Manual Moving", isManualMoving);
     SmartDashboard.putBoolean("Elevator/Moving Down", isMovingDown);
+    // if(goal.isPresent()) {
+    //   SmartDashboard.putNumber("Elevator/Goal Height", goal.get().position);
+    // } else {
+    //   SmartDashboard.putNumber("Elevator/Goal Height", 0.0);
+    // }
     if(!zeroSensor.get()) {
       motor1.setPosition(0);
       motor2.setPosition(0);
@@ -196,14 +206,7 @@ public class Elevator extends SubsystemBase {
       motor2.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
       return;
     }
-
-    // stop motors if the top limit switch hits (hard stop)
-    if(!maxSensor.get()) {
-      motor1.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
-      motor2.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
-      return;
-    }
-    
+  
     // stop motors if it's moving up and almost near the top (soft stop)
     if(!isMovingDown && sensorPosition > HIGHEST_POSITION) {
       motor1.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
@@ -244,5 +247,11 @@ public class Elevator extends SubsystemBase {
         motor2.setControl(new VelocityVoltage(RotationsPerSecond.of(newVelocity)).withSlot(VELOCITY_SLOT));
       }
     }
+  }
+  
+  public boolean isGoingToIntake() {
+    if(goal.isEmpty()) return false;
+
+    return !isManualMoving && Math.abs(goal.get().position - Elevator.INTAKE_HEIGHT) < 0.1;
   }
 }

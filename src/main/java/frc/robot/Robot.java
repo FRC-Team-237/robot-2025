@@ -60,10 +60,15 @@ public class Robot extends TimedRobot {
       var bestTarget = result.getBestTarget();
       if(bestTarget == null) continue;
 
-      SmartDashboard.putNumber("Best Target/Position/X", bestTarget.getBestCameraToTarget().getX());
-      SmartDashboard.putNumber("Best Target/Position/Y", bestTarget.getBestCameraToTarget().getY());
-      SmartDashboard.putNumber("Best Target/Position/Z", bestTarget.getBestCameraToTarget().getZ());
-      SmartDashboard.putNumber("Best Target/Distance", bestTarget.getBestCameraToTarget().getTranslation().getDistance(Translation3d.kZero));
+      var toTarget = bestTarget.getBestCameraToTarget();
+
+      SmartDashboard.putNumber("Best Target/Position/X", toTarget.getX());
+      SmartDashboard.putNumber("Best Target/Position/Y", toTarget.getY());
+      SmartDashboard.putNumber("Best Target/Position/Z", toTarget.getZ());
+      SmartDashboard.putNumber("Best Target/Distance", toTarget.getTranslation().getDistance(Translation3d.kZero));
+      SmartDashboard.putNumber("Best Target/Angle/X", toTarget.getRotation().getX() * (180 / Math.PI));
+      SmartDashboard.putNumber("Best Target/Angle/Y", toTarget.getRotation().getY() * (180 / Math.PI));
+      SmartDashboard.putNumber("Best Target/Angle/Z", toTarget.getRotation().getZ() * (180 / Math.PI));
       SmartDashboard.putNumber("Best Target/Angle/Pitch", bestTarget.getPitch());
       SmartDashboard.putNumber("Best Target/Angle/Yaw", bestTarget.getYaw());
     }
@@ -88,6 +93,8 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
+
+    m_robotContainer.claw.getClawOutOfTheWay();
   }
 
   /** This function is called periodically during autonomous. */
@@ -103,6 +110,7 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+    m_robotContainer.claw.getClawOutOfTheWay();
   }
 
   /** This function is called periodically during operator control. */
