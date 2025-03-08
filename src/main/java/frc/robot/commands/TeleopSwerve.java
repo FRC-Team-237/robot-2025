@@ -36,6 +36,10 @@ public class TeleopSwerve extends Command {
     double strafeVal = MathUtils.smoothInput(MathUtil.applyDeadband(strafeSup.getAsDouble(), Constants.stickDeadband), 2.0);
     double rotationVal = MathUtils.smoothInput(MathUtil.applyDeadband(rotationSup.getAsDouble(), Constants.stickDeadband), 2.0);
 
+    if(Math.abs(rotationVal) > 0.1) {
+      s_Swerve.clearAngleSetpoint();
+    }
+
     /* Drive */
     s_Swerve.drive(
       new Translation2d(translationVal, strafeVal).times(Constants.Swerve.maxSpeed), 

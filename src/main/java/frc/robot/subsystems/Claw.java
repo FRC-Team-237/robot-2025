@@ -91,7 +91,7 @@ public class Claw extends SubsystemBase {
       }
     }
 
-    if(clawPosition.getEncoder().getPosition() < -45) {
+    if(clawPosition.getEncoder().getPosition() < -52) {
       if(clawPosition.get() < 0) {
         clawPosition.set(0);
       }

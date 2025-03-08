@@ -25,11 +25,22 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Elevator extends SubsystemBase {
 
-  public static double MAX_HEIGHT = 4.2414;
-  public static double MID_HEIGHT = 2.7495;
-  public static double LOW_HEIGHT = 1.6829;
-  public static double LOW_ALGAE_HEIGHT = 1.226;
-  public static double INTAKE_HEIGHT = 0.76928;
+  private static Elevator instance;
+
+  public static Elevator getInstance() {
+    if (instance == null) {
+      instance = new Elevator();
+    }
+    return instance;
+  }
+
+  // public static double MAX_HEIGHT = 4.2414;
+  public static double MAX_HEIGHT = 4.335;
+  public static double MID_HEIGHT = 2.76;
+  public static double LOW_HEIGHT = 1.95;
+  public static double LOW_ALGAE_HEIGHT = 1.28;
+  public static double HIGH_ALGAE_HEIGHT = 2.50;
+  public static double INTAKE_HEIGHT = 0.82;
 
   private final double LOWEST_POSITION = 0.2;
   private final double HIGHEST_POSITION = 4.35;
@@ -72,11 +83,14 @@ public class Elevator extends SubsystemBase {
 
   private final DigitalInput zeroSensor = new DigitalInput(1);
   
-
   private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(minVoltageToMove, 0.25);
 
   private boolean isManualMoving = false;
   private boolean isMovingDown = false;
+
+  public static double getHeight() {
+    return instance.motor1.getPosition().getValueAsDouble();
+  }
   
   private TalonFXConfiguration configs = new TalonFXConfiguration()
     // position control
@@ -201,7 +215,7 @@ public class Elevator extends SubsystemBase {
     }
 
     // stop motors if it's moving down and almost near the bottom
-    if(isMovingDown && sensorPosition < LOWEST_POSITION) {
+    if(isMovingDown && !zeroSensor.get() /*&& sensorPosition < LOWEST_POSITION*/) {
       motor1.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
       motor2.setControl(new VelocityVoltage(0).withSlot(NEUTRAL_SLOT));
       return;

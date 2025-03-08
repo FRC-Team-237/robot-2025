@@ -4,13 +4,16 @@
 
 package frc.robot;
 
-import org.photonvision.PhotonCamera;
-
-import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
+import frc.robot.commands.TeleopSwerve;
+import frc.robot.subsystems.*;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -22,10 +25,7 @@ public class Robot extends TimedRobot {
   public static final CTREConfigs ctreConfigs = new CTREConfigs();
 
   private Command m_autonomousCommand;
-
   private RobotContainer m_robotContainer;
-
-  private PhotonCamera camera = new PhotonCamera("Camera_Module_v1");
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -36,7 +36,7 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
-    // m_robotContainer.music.play();
+    CameraServer.startAutomaticCapture();
   }
 
   /**
@@ -54,23 +54,9 @@ public class Robot extends TimedRobot {
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
 
-    var results = camera.getAllUnreadResults();
-
-    for(var result : results) {
-      var bestTarget = result.getBestTarget();
-      if(bestTarget == null) continue;
-
-      var toTarget = bestTarget.getBestCameraToTarget();
-
-      SmartDashboard.putNumber("Best Target/Position/X", toTarget.getX());
-      SmartDashboard.putNumber("Best Target/Position/Y", toTarget.getY());
-      SmartDashboard.putNumber("Best Target/Position/Z", toTarget.getZ());
-      SmartDashboard.putNumber("Best Target/Distance", toTarget.getTranslation().getDistance(Translation3d.kZero));
-      SmartDashboard.putNumber("Best Target/Angle/X", toTarget.getRotation().getX() * (180 / Math.PI));
-      SmartDashboard.putNumber("Best Target/Angle/Y", toTarget.getRotation().getY() * (180 / Math.PI));
-      SmartDashboard.putNumber("Best Target/Angle/Z", toTarget.getRotation().getZ() * (180 / Math.PI));
-      SmartDashboard.putNumber("Best Target/Angle/Pitch", bestTarget.getPitch());
-      SmartDashboard.putNumber("Best Target/Angle/Yaw", bestTarget.getYaw());
+    var panelButtonCount = m_robotContainer.panel.getButtonCount();
+    for(var i = 0; i < panelButtonCount; i++) {
+      SmartDashboard.putBoolean("BUTTON/" + i, m_robotContainer.panel.getRawButton(i));
     }
   }
 
@@ -78,7 +64,7 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledInit() {
     // m_robotContainer.elevator.letGo();
-    m_robotContainer.elevator.drop();
+    Elevator.getInstance().drop();
   }
 
   @Override
@@ -87,14 +73,14 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+
+    // m_robotContainer.claw.getClawOutOfTheWay();
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
-
-    m_robotContainer.claw.getClawOutOfTheWay();
   }
 
   /** This function is called periodically during autonomous. */
@@ -111,13 +97,29 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.cancel();
     }
     m_robotContainer.claw.getClawOutOfTheWay();
+    
+    new InstantCommand(() -> {
+      var alliance = DriverStation.getAlliance();
+      double color = LEDs.BLINK_WHITE;
+      if(alliance.isPresent()) {
+        if(alliance.get() == DriverStation.Alliance.Blue) {
+          color = LEDs.BLINK_BLUE;
+        } else if(alliance.get() == DriverStation.Alliance.Red) {
+          color = LEDs.BLINK_RED;
+        }
+      }
+      LEDs.set(color);
+    })
+    .andThen(new WaitCommand(0.8))
+    .andThen(new InstantCommand(() -> {
+      LEDs.set(LEDs.getDefaultColor());
+    }))
+    .schedule();
   }
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {
-
-  }
+  public void teleopPeriodic() {}
 
   @Override
   public void testInit() {

@@ -45,13 +45,17 @@ public class Placer extends SubsystemBase {
   }
 
   public void spitCoral() {
-    motor1.set(-0.6);
-    motor2.set(0.6);
+    double speed = Elevator.getHeight() > Elevator.MAX_HEIGHT - 0.3 ? 0.45 : 0.6;
+    motor1.set(-speed);
+    motor2.set(speed);
+    LEDs.set(LEDs.getDefaultColor());
   }
 
   public void outtake() {
-    motor1.set(1.0);
-    motor2.set(-1.0);
+    double speed = Elevator.getHeight() > Elevator.MAX_HEIGHT - 0.5 ? 0.5 : 1.0;
+    motor1.set(speed);
+    motor2.set(-speed);
+    LEDs.set(LEDs.getDefaultColor());
   }
 
   @Override

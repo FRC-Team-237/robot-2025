@@ -37,13 +37,15 @@ public class TurnToAngle extends Command {
 
   @Override
   public boolean isFinished() {
-    var timerDone = this.timer.hasElapsed(seconds);
-    var atTargetAngle = Swerve.getInstance().atTargetAngle();
-    return timerDone || atTargetAngle;
+    // var timerDone = this.timer.hasElapsed(seconds);
+    // var atTargetAngle = Swerve.getInstance().atTargetAngle();
+    // return timerDone || atTargetAngle;
+    // return Math.abs(driver.getRawAxis(XboxController.Axis.kRightX.value)) > 0.1;
+    return true;
   }
 
   @Override
   public void end(boolean interrupted) {
-    Swerve.getInstance().clearAngleSetpoint();
+    // Swerve.getInstance().clearAngleSetpoint();
   }
 }

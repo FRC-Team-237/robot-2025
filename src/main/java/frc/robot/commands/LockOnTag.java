@@ -20,7 +20,7 @@ public class LockOnTag extends Command {
 
   @Override
   public void initialize() {
-    this.capturedTarget = Camera.getBestResult();
+    this.capturedTarget = Camera.getBestResult().get();
     this.hasTarget = true;
     if(this.capturedTarget == null) {
       hasTarget = false;

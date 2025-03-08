@@ -8,6 +8,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 
+import java.util.Optional;
+
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.math.controller.PIDController;
@@ -26,12 +28,31 @@ public class Swerve extends SubsystemBase {
   public SwerveModule[] mSwerveMods;
   public ADIS16470_IMU gyro;
 
-  private static final double MAX_HEIGHT = 4.35;
   private static final double MIN_SPEED = 0.1;
 
   private PIDController anglePIDController = new PIDController(0.06, 0, 0.1);
   private TalonFX elevatorMotor = new TalonFX(30);
   private boolean angleTargetEnabled = false;
+
+  private Optional<Translation2d> storedPosition = Optional.empty();
+
+  public void setStoredPosition() {
+    storedPosition = Optional.of(swerveOdometry.getPoseMeters().getTranslation());
+  }
+
+  public Optional<Translation2d> getStoredPosition() {
+    return storedPosition;
+  }
+
+  public Optional<Double> getStoredDistance() {
+    if(storedPosition.isEmpty()) return Optional.empty();
+
+    return Optional.of(
+      storedPosition.get().getDistance(
+        swerveOdometry.getPoseMeters().getTranslation()
+      )
+    );
+  }
 
   private double initialAngleOffset = 0;
 
@@ -46,6 +67,12 @@ public class Swerve extends SubsystemBase {
   }
 
   public Swerve() {
+    SmartDashboard.putData("Swerve/Store Distance", new InstantCommand(this::setStoredPosition));
+    SmartDashboard.putData("Swerve/Get Stored Distance", new InstantCommand(() -> {
+      if(getStoredPosition().isEmpty()) return;
+      System.out.println(getStoredDistance());
+    }));
+
     gyro = new ADIS16470_IMU();
     gyro.setGyroAngle(IMUAxis.kYaw, 0);
 
@@ -75,15 +102,57 @@ public class Swerve extends SubsystemBase {
     // return ((MIN_SPEED - 1) / MAX_HEIGHT) * elevatorMotor.getPosition().getValueAsDouble() + 1;
 
     // INVERSE
-    double power = (MIN_SPEED * MAX_HEIGHT) / (1 - MIN_SPEED);
+    double power = (MIN_SPEED * Elevator.MAX_HEIGHT) / (1 - MIN_SPEED);
     return power / (height + power);
   }
+
+  // private double heightSpeedMultiplier() {
+  //   double height = elevatorMotor.getPosition().getValueAsDouble();
+
+  //   double power = (MIN_SPEED * Elevator.MAX_HEIGHT) / (1 - MIN_SPEED);
+    
+  //   double scale = Elevator.MAX_HEIGHT / (Elevator.MAX_HEIGHT - Elevator.INTAKE_HEIGHT);
+
+  //   return -power / (scale * (height - Elevator.INTAKE_HEIGHT) + power);
+  // }
 
   public boolean atTargetAngle() {
     return anglePIDController.atSetpoint(); 
   }
 
-  public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
+  public double getTargetAngle() {
+    return anglePIDController.getSetpoint();
+  }
+
+  public void driveUnsafe(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
+
+    // if(Math.abs(rotation) > 0.1) {
+    //   clearAngleSetpoint();
+    // }
+
+    SmartDashboard.putNumber(
+      "Swerve/Speed/X",
+      getVelocity().getX()
+    );
+
+    SmartDashboard.putNumber(
+      "Swerve/Speed/Y",
+      getVelocity().getY()
+    );
+
+    SmartDashboard.putNumber(
+      "Swerve/Speed/Magnitude",
+      getVelocity().getNorm()
+    );
+
+    if(storedPosition.isPresent()) {
+      var p = storedPosition.get();
+      SmartDashboard.putNumber("Swerve/Position Delta/X", p.getX() - swerveOdometry.getPoseMeters().getTranslation().getX());
+      SmartDashboard.putNumber("Swerve/Position Delta/Y", p.getY() - swerveOdometry.getPoseMeters().getTranslation().getY());
+    } else {
+      SmartDashboard.putNumber("Swerve/Position Delta/X", 0);
+      SmartDashboard.putNumber("Swerve/Position Delta/Y", 0);
+    }
 
     anglePIDController.calculate(getGyroYaw().getDegrees());
     
@@ -95,16 +164,11 @@ public class Swerve extends SubsystemBase {
       }
     }
 
-    var multiplier = heightSpeedMultiplier();
-
-    translation = translation.times(multiplier);
-
     SwerveModuleState[] swerveModuleStates =
       Constants.Swerve.swerveKinematics.toSwerveModuleStates(
         fieldRelative
-
           ? ChassisSpeeds.fromFieldRelativeSpeeds(
-              translation.getX(), 
+              translation.getX(),
               translation.getY(), 
               rotation, 
               getHeading()
@@ -120,6 +184,12 @@ public class Swerve extends SubsystemBase {
     for(SwerveModule mod : mSwerveMods){
       mod.setDesiredState(swerveModuleStates[mod.moduleNumber], isOpenLoop);
     }
+  }
+
+  public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
+    var multiplier = heightSpeedMultiplier();
+    translation = translation.times(multiplier);
+    driveUnsafe(translation, rotation, fieldRelative, isOpenLoop);
   }
 
   public void setAngleSetpoint(Rotation2d angleSetpoint) {
@@ -181,10 +251,29 @@ public class Swerve extends SubsystemBase {
     return Rotation2d.fromDegrees(gyro.getAngle(IMUAxis.kYaw)).plus(Rotation2d.fromDegrees(initialAngleOffset));
   }
 
+  public Rotation2d getRotationalVelocity() {
+    return Rotation2d.fromDegrees(gyro.getRate(IMUAxis.kYaw));
+  }
+
   public void resetModulesToAbsolute() {
     for(SwerveModule mod : mSwerveMods){
       mod.resetToAbsolute();
     }
+  }
+
+  public Translation2d getVelocity() {
+    var vec = new Translation2d();
+
+    for(SwerveModule mod : mSwerveMods) {
+      vec = vec.plus(
+        new Translation2d(
+          mod.getState().speedMetersPerSecond,
+          mod.getState().angle
+        )
+      );
+    }
+
+    return vec.div(4.0);
   }
 
   @Override
