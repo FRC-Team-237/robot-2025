@@ -23,7 +23,7 @@ public class Claw extends SubsystemBase {
   private boolean lastMoveOveride = false; 
 
   private SparkMax clawIntake = new SparkMax(35, MotorType.kBrushless);
-  private SparkMax clawPosition = new SparkMax(34, MotorType.kBrushless);
+  public SparkMax clawPosition = new SparkMax(34, MotorType.kBrushless);
   private final DigitalInput zeroSensor = new DigitalInput(2);
   public Claw() {
     var intakeConfig = new SparkMaxConfig();
@@ -35,7 +35,7 @@ public class Claw extends SubsystemBase {
   }
 
   public void outtake() {
-    clawIntake.set(0.8);
+    clawIntake.set(0.5);
   }
 
   public void intake() {
@@ -91,7 +91,7 @@ public class Claw extends SubsystemBase {
       }
     }
 
-    if(clawPosition.getEncoder().getPosition() < -52) {
+    if(clawPosition.getEncoder().getPosition() < -47) {
       if(clawPosition.get() < 0) {
         clawPosition.set(0);
       }

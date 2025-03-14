@@ -13,14 +13,14 @@ import frc.robot.subsystems.Swerve;
 public class RelativeDriveTest extends Command {
   private Swerve swerve = Swerve.getInstance();
 
-  private static final TrapezoidProfile.Constraints rotationConstraints =
+  private TrapezoidProfile.Constraints rotationConstraints =
     new TrapezoidProfile.Constraints(1.5, 1);
-  private final ProfiledPIDController rotationController =
+  private ProfiledPIDController rotationController =
     new ProfiledPIDController(4, 0.0, 0, rotationConstraints);
   
-  private static final TrapezoidProfile.Constraints strafeConstraints =
+  private TrapezoidProfile.Constraints strafeConstraints =
     new TrapezoidProfile.Constraints(2.0, 1);
-  private final ProfiledPIDController strafeController =
+  private ProfiledPIDController strafeController =
     new ProfiledPIDController(4.0, 0.4, 0, strafeConstraints);
   
   private final boolean relativeAngle;
@@ -32,7 +32,7 @@ public class RelativeDriveTest extends Command {
     Rotation2d rotationDelta,
     boolean relativeAngle
   ) {
-    this(translationDelta, rotationDelta, relativeAngle, 0.1);
+    this(translationDelta, rotationDelta, relativeAngle, 0.1, 2.0, 4.0);
   }
 
   private final double positionDeadband;
@@ -43,11 +43,25 @@ public class RelativeDriveTest extends Command {
     boolean relativeAngle,
     double positionDeadband
   ) {
+    this(translationDelta, rotationDelta, relativeAngle, positionDeadband, 2.0, 4.0);
+  }
+
+  public RelativeDriveTest(
+    Translation2d translationDelta,
+    Rotation2d rotationDelta,
+    boolean relativeAngle,
+    double positionDeadband,
+    double maxSpeed,
+    double strafeP
+  ) {
     rotationController.enableContinuousInput(-Math.PI, Math.PI);
     this.relativeAngle = relativeAngle;
     this.translationDelta = translationDelta;
     this.rotationDelta = rotationDelta;
     this.positionDeadband = positionDeadband;
+    
+    this.strafeConstraints = new TrapezoidProfile.Constraints(maxSpeed, 1.25);
+    this.strafeController = new ProfiledPIDController(strafeP, 0.4, 0, strafeConstraints);
 
     this.addRequirements(Swerve.getInstance());
   }

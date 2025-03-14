@@ -317,8 +317,8 @@ public class RobotContainer {
     // );
 
     SmartDashboard.putData("AUTO TEST/1", high1Auto);
-    SmartDashboard.putData("AUTO TEST/2", low2Auto);
-    SmartDashboard.putData("AUTO TEST/3", low6Auto);
+    SmartDashboard.putData("AUTO TEST/2", high2Auto);
+    SmartDashboard.putData("AUTO TEST/3", high6Auto);
   }
   
   Command high1Auto = new RelativeDriveTest(
@@ -349,18 +349,53 @@ public class RobotContainer {
           return TrackReefHorizontally.Side.LEFT;
         }
       })
-    ).andThen(new RelativeDriveTest(
-      new Translation2d(
-        0.52,
-        0
-      ),
-      Rotation2d.kZero,
-      true
-    ))
+    )
+    .andThen(new WaitCommand(0.5))
+    .andThen(
+      new TrackReefHorizontally(() -> {
+        if(rightCoralSwitch.getAsBoolean()) {
+          return TrackReefHorizontally.Side.RIGHT;
+        } else {
+          return TrackReefHorizontally.Side.LEFT;
+        }
+      })
+    )
+    // .andThen(new RelativeDriveTest(
+    //   new Translation2d(
+    //     0.54,
+    //     0
+    //   ),
+    //   Rotation2d.kZero,
+    //   true
+    // ))
+    .andThen(new InstantCommand(() -> {
+      Swerve.getInstance().driveUnsafe(
+        new Translation2d(
+          0.225,
+          0
+        ),
+        0,
+        false,
+        true
+      );
+    }))
+    .andThen(new WaitCommand(2.75))
+    .andThen(new InstantCommand(() -> Swerve.getInstance().drive(Translation2d.kZero, 0, false, false)))
     .andThen(new InstantCommand(placer::spitCoral))
+    .andThen(new WaitCommand(1.0))
+    .andThen(new InstantCommand(() -> {
+      Swerve.getInstance().drive(
+        new Translation2d(-0.25, 0),
+        0,
+        false,
+        false
+      );
+    }))
+    .andThen(new WaitCommand(0.5))
+    .andThen(new InstantCommand(() -> elevator.move(-2)))
   );
 
-  Command low2Auto = new RelativeDriveTest(
+  Command high2Auto = new RelativeDriveTest(
     new Translation2d(
       -Meters.convertFrom(6.75, Feet),
       -Meters.convertFrom(6, Inches)
@@ -370,7 +405,7 @@ public class RobotContainer {
     0.15
   ).withTimeout(4).alongWith(
     new WaitCommand(2.0)
-      .andThen(new InstantCommand(() -> elevator.setGoal(Elevator.LOW_HEIGHT)))
+      .andThen(new InstantCommand(() -> elevator.setGoal(Elevator.MAX_HEIGHT)))
   )
   .andThen(new WaitCommand(0.5))
   .andThen(
@@ -388,18 +423,42 @@ public class RobotContainer {
           return TrackReefHorizontally.Side.LEFT;
         }
       })
-    ).andThen(new RelativeDriveTest(
-      new Translation2d(
-        0.52,
-        0
-      ),
-      Rotation2d.kZero,
-      true
-    ))
+    )
+    .andThen(new WaitCommand(0.5))
+    .andThen(
+      new TrackReefHorizontally(() -> {
+        if(rightCoralSwitch.getAsBoolean()) {
+          return TrackReefHorizontally.Side.RIGHT;
+        } else {
+          return TrackReefHorizontally.Side.LEFT;
+        }
+      })
+    )
+    // .andThen(new RelativeDriveTest(
+    //   new Translation2d(
+    //     0.54,
+    //     0
+    //   ),
+    //   Rotation2d.kZero,
+    //   true
+    // ))
+    .andThen(new InstantCommand(() -> {
+      Swerve.getInstance().driveUnsafe(
+        new Translation2d(
+          0.225,
+          0
+        ),
+        0,
+        false,
+        true
+      );
+    }))
+    .andThen(new WaitCommand(2.75))
+    .andThen(new InstantCommand(() -> Swerve.getInstance().drive(Translation2d.kZero, 0, false, false)))
     .andThen(new InstantCommand(placer::spitCoral))
   );
 
-  Command low6Auto = new RelativeDriveTest(
+  Command high6Auto = new RelativeDriveTest(
     new Translation2d(
       -Meters.convertFrom(6.75, Feet),
       Meters.convertFrom(6, Inches)
@@ -409,7 +468,7 @@ public class RobotContainer {
     0.15
   ).withTimeout(4).alongWith(
     new WaitCommand(2.0)
-      .andThen(new InstantCommand(() -> elevator.setGoal(Elevator.LOW_HEIGHT)))
+      .andThen(new InstantCommand(() -> elevator.setGoal(Elevator.MAX_HEIGHT)))
   )
   .andThen(new WaitCommand(0.5))
   .andThen(
@@ -427,14 +486,37 @@ public class RobotContainer {
           return TrackReefHorizontally.Side.LEFT;
         }
       })
-    ).andThen(new RelativeDriveTest(
-      new Translation2d(
-        0.52,
-        0
-      ),
-      Rotation2d.kZero,
-      true
-    ))
+    )
+    .andThen(
+      new TrackReefHorizontally(() -> {
+        if(rightCoralSwitch.getAsBoolean()) {
+          return TrackReefHorizontally.Side.RIGHT;
+        } else {
+          return TrackReefHorizontally.Side.LEFT;
+        }
+      })
+    )
+    // .andThen(new RelativeDriveTest(
+    //   new Translation2d(
+    //     0.54,
+    //     0
+    //   ),
+    //   Rotation2d.kZero,
+    //   true
+    // ))
+    .andThen(new InstantCommand(() -> {
+      Swerve.getInstance().driveUnsafe(
+        new Translation2d(
+          0.225,
+          0
+        ),
+        0,
+        false,
+        true
+      );
+    }))
+    .andThen(new WaitCommand(2.75))
+    .andThen(new InstantCommand(() -> Swerve.getInstance().drive(Translation2d.kZero, 0, false, false)))
     .andThen(new InstantCommand(placer::spitCoral))
   );
 
@@ -450,9 +532,9 @@ public class RobotContainer {
     var isThreeAuto = panel.getRawButton(24);
     var isFourAuto = panel.getRawButton(25);
 
-    if(isOneAuto) return low6Auto;
+    if(isOneAuto) return high6Auto;
     if(isTwoAuto) return high1Auto;
-    if(isThreeAuto) return low2Auto;
+    if(isThreeAuto) return high2Auto;
 
     return new RelativeDriveTest(
       new Translation2d(

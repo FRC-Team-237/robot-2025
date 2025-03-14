@@ -39,8 +39,8 @@ public class Elevator extends SubsystemBase {
   public static double MID_HEIGHT = 2.76;
   public static double LOW_HEIGHT = 1.95;
   public static double LOW_ALGAE_HEIGHT = 1.28;
-  public static double HIGH_ALGAE_HEIGHT = 2.50;
-  public static double INTAKE_HEIGHT = 0.82;
+  public static double HIGH_ALGAE_HEIGHT = 2.35;
+  public static double INTAKE_HEIGHT = 0.72;
 
   private final double LOWEST_POSITION = 0.2;
   private final double HIGHEST_POSITION = 4.35;

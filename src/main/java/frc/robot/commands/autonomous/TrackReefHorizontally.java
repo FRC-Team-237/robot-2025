@@ -76,8 +76,8 @@ public class TrackReefHorizontally extends Command {
     var targetTransform = target.get().getBestCameraToTarget();
 
     var sideOffset = sideSupplier.get() == Side.LEFT
-      ? Meters.convertFrom(7, Inches)
-      : -Meters.convertFrom(7, Inches);
+      ? Meters.convertFrom(5.5, Inches)
+      : -Meters.convertFrom(8.5, Inches);
 
     translationDelta = targetTransform
       .inverse()
@@ -120,7 +120,7 @@ public class TrackReefHorizontally extends Command {
     SmartDashboard.putNumber("TARGET/Strafe Output", output);
 
     swerve.driveUnsafe(
-      new Translation2d(0, MathUtil.clamp(output, -0.2, 0.2)),
+      new Translation2d(0, MathUtil.clamp(output, -0.225, 0.225)),
       0,
       false,
       true

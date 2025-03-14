@@ -98,6 +98,8 @@ public class Swerve extends SubsystemBase {
   private double heightSpeedMultiplier() {
     double height = elevatorMotor.getPosition().getValueAsDouble();
 
+    if(height <= Elevator.INTAKE_HEIGHT + 0.25) return 1;
+
     // LINEAR
     // return ((MIN_SPEED - 1) / MAX_HEIGHT) * elevatorMotor.getPosition().getValueAsDouble() + 1;
 

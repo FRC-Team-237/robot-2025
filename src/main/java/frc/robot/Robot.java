@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.commands.TeleopSwerve;
 import frc.robot.subsystems.*;
@@ -97,6 +98,12 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.cancel();
     }
     m_robotContainer.claw.getClawOutOfTheWay();
+    // new RunCommand(() -> {
+    //   m_robotContainer.claw.lowerClaw();
+    // }).until(() -> {
+    //   return m_robotContainer.claw.clawPosition.getEncoder().getPosition() <= -8;
+    // })
+    // .andThen(new InstantCommand(() -> m_robotContainer.claw.stopClawPosition()));
     
     new InstantCommand(() -> {
       var alliance = DriverStation.getAlliance();
