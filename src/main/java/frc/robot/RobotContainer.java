@@ -26,6 +26,8 @@ public class RobotContainer {
   public final Joystick driver = new Joystick(0);
   public final Joystick panel = new Joystick(1);
 
+  public final Joystick interlink = new Joystick(2);
+
   /* Drive Controls */
   public final int translationAxis = XboxController.Axis.kLeftY.value;
   public final int strafeAxis = XboxController.Axis.kLeftX.value;
@@ -95,6 +97,15 @@ public class RobotContainer {
         () -> robotCentric.getAsBoolean()
       )
     );
+    // Swerve.getInstance().setDefaultCommand(
+    //   new TeleopSwerve(
+    //     Swerve.getInstance(),
+    //     () -> interlink.getRawAxis(1),
+    //     () -> -interlink.getRawAxis(0),
+    //     () -> -interlink.getRawAxis(3),
+    //     () -> robotCentric.getAsBoolean()
+    //   )
+    // );
 
     // Configure the button bindings
     configureButtonBindings();
@@ -111,11 +122,11 @@ public class RobotContainer {
     // zeroGyro.onTrue(new InstantCommand(() -> Swerve.getInstance().zeroHeading()));
 
     elevatorUp
-      .onTrue(new InstantCommand(() -> elevator.move(3)))
+      .onTrue(new InstantCommand(() -> elevator.move(7)))
       .onFalse(new InstantCommand(elevator::drop));
     
     elevatorDown
-      .onTrue(new InstantCommand(() -> elevator.move(-2.0)))
+      .onTrue(new InstantCommand(() -> elevator.move(-4)))
       .onFalse(new InstantCommand(elevator::drop));
     
     maxHeight.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.MAX_HEIGHT)));
@@ -124,7 +135,7 @@ public class RobotContainer {
     lowAlgae.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.LOW_ALGAE_HEIGHT)));
     highAlgae.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.HIGH_ALGAE_HEIGHT)));
 
-    dropElevator.onTrue(new InstantCommand(() -> elevator.move(-2.0)));
+    dropElevator.onTrue(new InstantCommand(() -> elevator.move(-4.0)));
     
     // @TODO: Test if we can put these in each intake[Side] command to reduce code duplication
     // var intakeUntilHasCoralOrCancel = new RunCommand(placer::intake, placer)

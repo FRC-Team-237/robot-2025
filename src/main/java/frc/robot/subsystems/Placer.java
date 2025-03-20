@@ -64,7 +64,7 @@ public class Placer extends SubsystemBase {
     // var goalHeight = SmartDashboard.getNumber("Elevator/Goal Height", 0.0);
     // var manuallyMoving = SmartDashboard.getBoolean("Elevator/Manual Moving", false);
 
-    // if(Math.abs(goalHeight - Elevator.INTAKE_HEIGHT) > 0.1 || manuallyMoving) {
+    // if(Math.abs(goalHeight - Elevator2.INTAKE_HEIGHT) > 0.1 || manuallyMoving) {
     //   motor1.set(0);
     //   motor2.set(0);
     // }

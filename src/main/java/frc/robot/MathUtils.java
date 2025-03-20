@@ -8,4 +8,10 @@ public class MathUtils {
   public static double smoothInput(double input, double power) {
     return Math.abs(Math.pow(input, power)) * Math.signum(input);
   }
+
+  public static double downwardCurve(double x, double minY, double maxX) {
+    double p = (minY - maxX) / (1 - minY);
+
+    return p / (x + p);
+  }
 }

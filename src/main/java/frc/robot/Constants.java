@@ -61,7 +61,7 @@ public final class Constants {
     public static final double closedLoopRamp = 0.0;
 
     /* Angle Motor PID Values */
-    public static final double angleKP = 35.0; //chosenModule.angleKP;
+    public static final double angleKP = chosenModule.angleKP;
     public static final double angleKI = chosenModule.angleKI;
     public static final double angleKD = chosenModule.angleKD;
 
@@ -78,7 +78,7 @@ public final class Constants {
 
     /* Swerve Profiling Values */
     /** Meters per Second */
-    public static final double maxSpeed = 4.0;
+    public static final double maxSpeed = 4.5;
     /** Radians per Second */
     public static final double maxAngularVelocity = 5.0;
 

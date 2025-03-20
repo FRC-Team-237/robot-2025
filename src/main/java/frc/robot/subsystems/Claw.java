@@ -5,13 +5,12 @@ import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
@@ -30,16 +29,22 @@ public class Claw extends SubsystemBase {
     intakeConfig.closedLoop.p(1);
     intakeConfig.closedLoop.i(0);
     intakeConfig.closedLoop.d(0);
+    intakeConfig.idleMode(IdleMode.kBrake);
 
     clawIntake.configure(intakeConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    var positionConfig = new SparkMaxConfig();
+    positionConfig.idleMode(IdleMode.kBrake);
+
+    clawPosition.configure(positionConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   public void outtake() {
-    clawIntake.set(0.5);
+    clawIntake.set(1.0);
   }
 
   public void intake() {
-    clawIntake.set(-0.5);
+    clawIntake.set(-1.0);
   }
 
   public void stopIntake() {
@@ -91,7 +96,7 @@ public class Claw extends SubsystemBase {
       }
     }
 
-    if(clawPosition.getEncoder().getPosition() < -47) {
+    if(clawPosition.getEncoder().getPosition() < -48) {
       if(clawPosition.get() < 0) {
         clawPosition.set(0);
       }

@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import frc.robot.SwerveModule;
 import frc.robot.Constants;
-
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -96,16 +95,44 @@ public class Swerve extends SubsystemBase {
   }
 
   private double heightSpeedMultiplier() {
-    double height = elevatorMotor.getPosition().getValueAsDouble();
+    // double height = elevatorMotor.getPosition().getValueAsDouble();
 
-    if(height <= Elevator.INTAKE_HEIGHT + 0.25) return 1;
+    // // if(height <= Elevator.INTAKE_HEIGHT) return 1;
 
-    // LINEAR
-    // return ((MIN_SPEED - 1) / MAX_HEIGHT) * elevatorMotor.getPosition().getValueAsDouble() + 1;
+    // // // LINEAR
+    // // // return ((MIN_SPEED - 1) / MAX_HEIGHT) * elevatorMotor.getPosition().getValueAsDouble() + 1;
 
-    // INVERSE
-    double power = (MIN_SPEED * Elevator.MAX_HEIGHT) / (1 - MIN_SPEED);
-    return power / (height + power);
+    // // // INVERSE
+    // // // double power = (MIN_SPEED * Elevator.MAX_HEIGHT) / (1 - MIN_SPEED);
+    // // // return power / (height + power);
+
+    // // double hScale = (Elevator.MAX_HEIGHT - Elevator.INTAKE_HEIGHT) / Elevator.MAX_HEIGHT;
+    
+    // // double value = -MathUtils.downwardCurve(
+    // //   (height - Elevator.INTAKE_HEIGHT) / hScale,
+    // //   MIN_SPEED,
+    // //   Elevator.INTAKE_HEIGHT
+    // // );
+    
+    // // SmartDashboard.putNumber("Swerve/Height Speed Multiplier", value);
+    
+    // // return value;
+
+    // return MathUtils.downwardCurve(
+    //   height,
+    //   MIN_SPEED,
+    //   Elevator.INTAKE_HEIGHT
+    // );
+
+    double height = elevatorMotor.getPosition().getValueAsDouble() - 0.15;
+
+    if(height <= Elevator.INTAKE_HEIGHT) return 1;
+    if(height <= Elevator.LOW_ALGAE_HEIGHT) return 0.8;
+    if(height <= Elevator.LOW_HEIGHT) return 0.4;
+    if(height <= Elevator.HIGH_ALGAE_HEIGHT) return 0.25;
+    if(height <= Elevator.MID_HEIGHT) return 0.175;
+
+    return 0.135;
   }
 
   // private double heightSpeedMultiplier() {
@@ -160,7 +187,7 @@ public class Swerve extends SubsystemBase {
     
     if(angleTargetEnabled) {
       if(atTargetAngle()) {
-        clearAngleSetpoint();
+        // clearAngleSetpoint();
       } else {
         rotation = anglePIDController.calculate(getGyroYaw().getDegrees());
       }

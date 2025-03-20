@@ -56,7 +56,7 @@ public class Robot extends TimedRobot {
     CommandScheduler.getInstance().run();
 
     var panelButtonCount = m_robotContainer.panel.getButtonCount();
-    for(var i = 0; i < panelButtonCount; i++) {
+    for(var i = 1; i <= panelButtonCount; i++) {
       SmartDashboard.putBoolean("BUTTON/" + i, m_robotContainer.panel.getRawButton(i));
     }
   }
@@ -98,6 +98,7 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.cancel();
     }
     m_robotContainer.claw.getClawOutOfTheWay();
+    // Swerve.getInstance().setAngleSetpoint(Swerve.getInstance().getGyroYaw());
     // new RunCommand(() -> {
     //   m_robotContainer.claw.lowerClaw();
     // }).until(() -> {

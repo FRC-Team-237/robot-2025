@@ -34,16 +34,15 @@ public class Elevator extends SubsystemBase {
     return instance;
   }
 
-  // public static double MAX_HEIGHT = 4.2414;
-  public static double MAX_HEIGHT = 4.335;
-  public static double MID_HEIGHT = 2.76;
-  public static double LOW_HEIGHT = 1.95;
-  public static double LOW_ALGAE_HEIGHT = 1.28;
-  public static double HIGH_ALGAE_HEIGHT = 2.35;
-  public static double INTAKE_HEIGHT = 0.72;
+  public static double MAX_HEIGHT = 7.962;
+  public static double MID_HEIGHT = 5.060;
+  public static double LOW_HEIGHT = 3.575;
+  public static double LOW_ALGAE_HEIGHT = 2.347;
+  public static double HIGH_ALGAE_HEIGHT = 4.308;
+  public static double INTAKE_HEIGHT = 1.320;
 
-  private final double LOWEST_POSITION = 0.2;
-  private final double HIGHEST_POSITION = 4.35;
+  private static final double LOWEST_POSITION = 0.35;
+  private static final double HIGHEST_POSITION = 7.975;
   private final int POSITION_SLOT = 0;
   private final int VELOCITY_SLOT = 1;
   private final int NEUTRAL_SLOT = 2;
@@ -70,10 +69,10 @@ public class Elevator extends SubsystemBase {
 
   private double desiredVelocity = 0.0;
 
-  private final double maxVelocity = 3.0;
-  private final double maxAcceleration = 2.5;
+  private final double maxVelocity = 8.0;
+  private final double maxAcceleration = 4.0;
 
-  private final double staticG = 0.7;
+  private final double staticG = 0.0;
   private final double staticV = 3.5;
   private final double staticA = 0.5;
 
