@@ -6,11 +6,27 @@ import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class Placer extends SubsystemBase {
+
+  public static Placer instance;
+
+  public static Placer getInstance() {
+    if (instance == null) {
+      instance = new Placer();
+    }
+    return instance;
+  }
+
   private SparkMax motor1 = new SparkMax(32, MotorType.kBrushless);
   private SparkMax motor2 = new SparkMax(33, MotorType.kBrushless);
 
@@ -21,6 +37,9 @@ public class Placer extends SubsystemBase {
     return seenCoral && !coralSensor.get();
   }
 
+  public boolean coralGoingThrough = false;
+  private Trigger coralSensorTrigger = new Trigger(() -> coralSensor.get());
+
   public Placer() {
     var config = new SparkMaxConfig();
     config.closedLoop.p(1);
@@ -28,6 +47,20 @@ public class Placer extends SubsystemBase {
     config.closedLoop.d(0);
     motor1.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     motor2.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    coralSensorTrigger
+      .debounce(0.3, DebounceType.kRising)
+      .onTrue(new InstantCommand(() -> {
+        seenCoral = false;
+        coralGoingThrough = true;
+      }).ignoringDisable(true))
+      .onFalse(new InstantCommand(() -> {
+        if(!DriverStation.isAutonomous()) {
+          stop();
+        }
+        seenCoral = true;
+        coralGoingThrough = false;
+      }).ignoringDisable(true));
   }
 
   public void stop() {
@@ -37,7 +70,7 @@ public class Placer extends SubsystemBase {
   }
 
   public void intake() {
-    if(coralSensor.get()) {
+    if(coralSensor.get() && coralGoingThrough) {
       seenCoral = true;
     }
     motor1.set(-0.25);
@@ -60,7 +93,11 @@ public class Placer extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putBoolean("Placer/Has Coral", coralSensor.get());
+    SmartDashboard.putBoolean("Placer/Has Coral", hasCoral());
+    SmartDashboard.putBoolean("Placer/Seen Coral", seenCoral);
+
+    SmartDashboard.putBoolean("Placer/Coral Going Through", coralGoingThrough);
+
     // var goalHeight = SmartDashboard.getNumber("Elevator/Goal Height", 0.0);
     // var manuallyMoving = SmartDashboard.getBoolean("Elevator/Manual Moving", false);
 

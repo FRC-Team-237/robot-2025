@@ -4,9 +4,12 @@
 
 package frc.robot;
 
+import java.util.Optional;
+
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -55,9 +58,9 @@ public class Robot extends TimedRobot {
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
 
-    var panelButtonCount = m_robotContainer.panel.getButtonCount();
+    var panelButtonCount = m_robotContainer.interlink.getButtonCount();
     for(var i = 1; i <= panelButtonCount; i++) {
-      SmartDashboard.putBoolean("BUTTON/" + i, m_robotContainer.panel.getRawButton(i));
+      SmartDashboard.putBoolean("BUTTON/" + i, m_robotContainer.interlink.getRawButton(i));
     }
   }
 
@@ -75,6 +78,7 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    Swerve.getInstance().clearAngleSetpoint();
 
     // m_robotContainer.claw.getClawOutOfTheWay();
 
@@ -98,13 +102,6 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.cancel();
     }
     m_robotContainer.claw.getClawOutOfTheWay();
-    // Swerve.getInstance().setAngleSetpoint(Swerve.getInstance().getGyroYaw());
-    // new RunCommand(() -> {
-    //   m_robotContainer.claw.lowerClaw();
-    // }).until(() -> {
-    //   return m_robotContainer.claw.clawPosition.getEncoder().getPosition() <= -8;
-    // })
-    // .andThen(new InstantCommand(() -> m_robotContainer.claw.stopClawPosition()));
     
     new InstantCommand(() -> {
       var alliance = DriverStation.getAlliance();
@@ -125,9 +122,24 @@ public class Robot extends TimedRobot {
     .schedule();
   }
 
+  private Optional<Double> lastLEDColor = LEDs.currentColor;
+
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    var t = Camera.getLatestResult();
+
+    if(t.isPresent()) {
+      if(LEDs.currentColor.isPresent() && LEDs.currentColor.get() != LEDs.LIME) {
+        lastLEDColor = LEDs.currentColor;
+      }
+      LEDs.set(LEDs.LIME);
+    } else {
+      if(lastLEDColor.isPresent()) {
+        LEDs.set(lastLEDColor.get());
+      }
+    }
+  }
 
   @Override
   public void testInit() {

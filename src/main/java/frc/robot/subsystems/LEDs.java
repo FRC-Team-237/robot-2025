@@ -1,12 +1,18 @@
 package frc.robot.subsystems;
 
+import java.util.Optional;
+
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PWM;
 
 public class LEDs {
+
+  public static Optional<Double> currentColor = Optional.empty();
+
   private static final PWM pwm = new PWM(0);
 
   public static double RAINBOW_GLITTER = -0.89;
+  public static double RAINBOW_TWINKLES = -0.55;
 
   public static double LAVA_WAVES = -0.39;
   public static double OCEAN_WAVES = -0.41;
@@ -52,6 +58,7 @@ public class LEDs {
   }
 
   public static void set(double value) {
+    currentColor = Optional.of(value);
     pwm.setSpeed(value);
   }
 

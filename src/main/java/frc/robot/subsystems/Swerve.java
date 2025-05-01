@@ -193,21 +193,21 @@ public class Swerve extends SubsystemBase {
       }
     }
 
+    var chassisSpeeds = fieldRelative
+      ? ChassisSpeeds.fromFieldRelativeSpeeds(
+          translation.getX(),
+          translation.getY(), 
+          rotation, 
+          getHeading()
+        )
+      : new ChassisSpeeds(
+          translation.getX(), 
+          translation.getY(), 
+          rotation
+        );
+
     SwerveModuleState[] swerveModuleStates =
-      Constants.Swerve.swerveKinematics.toSwerveModuleStates(
-        fieldRelative
-          ? ChassisSpeeds.fromFieldRelativeSpeeds(
-              translation.getX(),
-              translation.getY(), 
-              rotation, 
-              getHeading()
-            )
-          : new ChassisSpeeds(
-              translation.getX(), 
-              translation.getY(), 
-              rotation
-            )
-      );
+      Constants.Swerve.swerveKinematics.toSwerveModuleStates(chassisSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, Constants.Swerve.maxSpeed);
 
     for(SwerveModule mod : mSwerveMods){
@@ -303,6 +303,15 @@ public class Swerve extends SubsystemBase {
     }
 
     return vec.div(4.0);
+  }
+
+  public ChassisSpeeds getChassisSpeeds() {
+    return ChassisSpeeds.fromRobotRelativeSpeeds(
+      getVelocity().getX(),
+      getVelocity().getY(),
+      getRotationalVelocity().getRadians(),
+      getHeading()
+    );
   }
 
   @Override

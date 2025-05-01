@@ -14,8 +14,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.autos.Autos;
+import frc.robot.autos.TrackAndScore;
+import frc.robot.autos.TrackAndScore.Side;
 import frc.robot.commands.*;
 import frc.robot.commands.autonomous.TrackReefHorizontally;
 import frc.robot.commands.autonomous.TrackReefWithOffset;
@@ -23,7 +28,7 @@ import frc.robot.subsystems.*;
 
 public class RobotContainer {
   /* Controllers */
-  public final Joystick driver = new Joystick(0);
+  public final CommandXboxController driver = new CommandXboxController(0);
   public final Joystick panel = new Joystick(1);
 
   public final Joystick interlink = new Joystick(2);
@@ -34,17 +39,25 @@ public class RobotContainer {
   public final int rotationAxis = XboxController.Axis.kRightX.value;
 
   /* Driver Buttons */
-  public final JoystickButton robotCentric = new JoystickButton(driver, XboxController.Button.kLeftBumper.value);
-  private final JoystickButton lockOn = new JoystickButton(driver, XboxController.Button.kRightBumper.value);
-  private final POVButton intakeButton = new POVButton(driver, 0);
-  private final POVButton outtakeButton = new POVButton(driver, 180);
+  public final Trigger robotCentric = driver.leftBumper();
+  // private final JoystickButton lockOn = new JoystickButton(driver, XboxController.Button.kRightBumper.value);
+  // private final POVButton outtakeButton = new POVButton(driver, 180);
+  private final Trigger lockOn = driver.rightBumper();
+  private final Trigger outtakeButton = driver.pov(180);
+  // private final Trigger intakeButton = driver.pov(0);
+  private final Trigger intakeButton = driver.leftTrigger(0.3);
+  private final JoystickButton intakeButton2 = new JoystickButton(interlink, 26);
 
-  private final JoystickButton clawIntake = new JoystickButton(driver, XboxController.Button.kX.value);
-  private final JoystickButton clawOuttake = new JoystickButton(driver, XboxController.Button.kY.value);
-  private final JoystickButton clawRaise = new JoystickButton(driver, XboxController.Button.kB.value);
-  private final JoystickButton clawLower = new JoystickButton(driver, XboxController.Button.kA.value);
+  // private final JoystickButton clawIntake = new JoystickButton(driver, XboxController.Button.kX.value);
+  // private final JoystickButton clawOuttake = new JoystickButton(driver, XboxController.Button.kY.value);
+  // private final JoystickButton clawRaise = new JoystickButton(driver, XboxController.Button.kB.value);
+  // private final JoystickButton clawLower = new JoystickButton(driver, XboxController.Button.kA.value);
+  private final Trigger clawIntake = driver.x();
+  private final Trigger clawOuttake = driver.y();
+  private final Trigger clawRaise = driver.b();
+  private final Trigger clawLower = driver.a();
 
-  private final JoystickButton TEST_horizontalTrack = new JoystickButton(driver, XboxController.Button.kStart.value);
+  // private final JoystickButton TEST_horizontalTrack = new JoystickButton(driver, XboxController.Button.kStart.value);
 
   /* Panel Buttons */
   
@@ -81,7 +94,7 @@ public class RobotContainer {
 
   /* Subsystems */
   public Elevator elevator = Elevator.getInstance();
-  public final Placer placer = new Placer();
+  public final Placer placer = Placer.getInstance();
   public final Claw claw = new Claw();
   // public final Music music = new Music();
 
@@ -123,10 +136,12 @@ public class RobotContainer {
 
     elevatorUp
       .onTrue(new InstantCommand(() -> elevator.move(7)))
+      // .onFalse(new InstantCommand(() -> elevator.setGoal(Elevator.getHeight())));
       .onFalse(new InstantCommand(elevator::drop));
     
     elevatorDown
       .onTrue(new InstantCommand(() -> elevator.move(-4)))
+      // .onFalse(new InstantCommand(() -> elevator.setGoal(Elevator.getHeight())));
       .onFalse(new InstantCommand(elevator::drop));
     
     maxHeight.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.MAX_HEIGHT)));
@@ -135,7 +150,7 @@ public class RobotContainer {
     lowAlgae.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.LOW_ALGAE_HEIGHT)));
     highAlgae.onTrue(new InstantCommand(() -> elevator.setGoal(Elevator.HIGH_ALGAE_HEIGHT)));
 
-    dropElevator.onTrue(new InstantCommand(() -> elevator.move(-4.0)));
+    dropElevator.onTrue(new InstantCommand(() -> elevator.move(-8.0)));
     
     // @TODO: Test if we can put these in each intake[Side] command to reduce code duplication
     // var intakeUntilHasCoralOrCancel = new RunCommand(placer::intake, placer)
@@ -217,7 +232,7 @@ public class RobotContainer {
         )
     );
 
-    intakeButton
+    intakeButton.or(intakeButton2)
       .onTrue(new InstantCommand(placer::spitCoral, placer))
       .onFalse(new InstantCommand(placer::stop, placer));
     
@@ -267,30 +282,30 @@ public class RobotContainer {
     //       true
     //     ))
     // );
-    lockOn.whileTrue(
-      new TrackReefWithOffset(
-        new Translation2d(
-          -1,
-          0
-        ),
-        Rotation2d.fromDegrees(0)
-      ).andThen(
-        new TrackReefHorizontally(() -> {
-          if(rightCoralSwitch.getAsBoolean()) {
-            return TrackReefHorizontally.Side.RIGHT;
-          } else {
-            return TrackReefHorizontally.Side.LEFT;
-          }
-        })
-      ).andThen(new RelativeDriveTest(
-        new Translation2d(
-          0.52,
-          0
-        ),
-        Rotation2d.kZero,
-        true
-      ))
-    );
+    // lockOn.whileTrue(
+    //   new TrackReefWithOffset(
+    //     new Translation2d(
+    //       -1,
+    //       0
+    //     ),
+    //     Rotation2d.fromDegrees(0)
+    //   ).andThen(
+    //     new TrackReefHorizontally(() -> {
+    //       if(rightCoralSwitch.getAsBoolean()) {
+    //         return TrackReefHorizontally.Side.RIGHT;
+    //       } else {
+    //         return TrackReefHorizontally.Side.LEFT;
+    //       }
+    //     })
+    //   ).andThen(new RelativeDriveTest(
+    //     new Translation2d(
+    //       0.52,
+    //       0
+    //     ),
+    //     Rotation2d.kZero,
+    //     true
+    //   ))
+    // );
 
     farMiddle.onTrue(new TurnToAngle(Rotation2d.fromDegrees(180)));
     farRight.onTrue(new TurnToAngle(Rotation2d.fromDegrees(120)));
@@ -327,209 +342,48 @@ public class RobotContainer {
     //   )
     // );
 
-    SmartDashboard.putData("AUTO TEST/1", high1Auto);
-    SmartDashboard.putData("AUTO TEST/2", high2Auto);
-    SmartDashboard.putData("AUTO TEST/3", high6Auto);
+    // SmartDashboard.putData("AUTO TEST/1", high1Auto);
+    // SmartDashboard.putData("AUTO TEST/2", high2Auto);
+    // SmartDashboard.putData("AUTO TEST/3", high6Auto);
+
+    // SmartDashboard.putData(
+    //   "AUTO TEST/DRIVE RELATIVE",
+    //   new TestDriveToRelativePose(
+    //     () -> new Translation2d(2.0, 0.0),
+    //     () -> Rotation2d.fromDegrees(180)
+    //   )
+    // );
+
+    SmartDashboard.putData(
+      "AUTO TEST/Reef 2",
+      Autos.Reef2(Elevator.MAX_HEIGHT, Side.LEFT)
+    );
+
+    // SmartDashboard.putData(
+    //   "AUTO TEST/TRACK TARGET",
+    //   new TestDriveToTargetWithOffset(
+    //     () -> new Translation2d(-1.0, 0.0),
+    //     () -> Rotation2d.kZero
+    //   )
+    // );
+
+    // lockOn.whileTrue(
+    //   new TestDriveToTargetWithOffset(
+    //     // () -> new Translation2d(-Units.inchesToMeters(28), 0.0),
+    //     () -> {
+    //       var horizontal = rightCoralSwitch.getAsBoolean() ? Units.inchesToMeters(6) : Units.inchesToMeters(-6);
+    //       return new Translation2d(-Units.inchesToMeters(28), horizontal);
+    //     },
+    //     () -> Rotation2d.kZero
+    //   )
+    // );
+
+    lockOn.whileTrue(
+      new TrackAndScore(
+        () -> rightCoralSwitch.getAsBoolean() ? Side.RIGHT : Side.LEFT
+      )
+    );
   }
-  
-  Command high1Auto = new RelativeDriveTest(
-    new Translation2d(
-      -Meters.convertFrom(4.5, Feet),
-      -0.3
-    ),
-    Rotation2d.fromDegrees(165),
-    false,
-    0.15
-  ).withTimeout(4).alongWith(
-    new WaitCommand(2.0)
-      .andThen(new InstantCommand(() -> elevator.setGoal(Elevator.MAX_HEIGHT)))
-  )
-  .andThen(new WaitCommand(0.5))
-  .andThen(
-    new TrackReefWithOffset(
-      new Translation2d(
-        -1,
-        0
-      ),
-      Rotation2d.fromDegrees(0)
-    ).andThen(
-      new TrackReefHorizontally(() -> {
-        if(rightCoralSwitch.getAsBoolean()) {
-          return TrackReefHorizontally.Side.RIGHT;
-        } else {
-          return TrackReefHorizontally.Side.LEFT;
-        }
-      })
-    )
-    .andThen(new WaitCommand(0.5))
-    .andThen(
-      new TrackReefHorizontally(() -> {
-        if(rightCoralSwitch.getAsBoolean()) {
-          return TrackReefHorizontally.Side.RIGHT;
-        } else {
-          return TrackReefHorizontally.Side.LEFT;
-        }
-      })
-    )
-    // .andThen(new RelativeDriveTest(
-    //   new Translation2d(
-    //     0.54,
-    //     0
-    //   ),
-    //   Rotation2d.kZero,
-    //   true
-    // ))
-    .andThen(new InstantCommand(() -> {
-      Swerve.getInstance().driveUnsafe(
-        new Translation2d(
-          0.225,
-          0
-        ),
-        0,
-        false,
-        true
-      );
-    }))
-    .andThen(new WaitCommand(2.75))
-    .andThen(new InstantCommand(() -> Swerve.getInstance().drive(Translation2d.kZero, 0, false, false)))
-    .andThen(new InstantCommand(placer::spitCoral))
-    .andThen(new WaitCommand(1.0))
-    .andThen(new InstantCommand(() -> {
-      Swerve.getInstance().drive(
-        new Translation2d(-0.25, 0),
-        0,
-        false,
-        false
-      );
-    }))
-    .andThen(new WaitCommand(0.5))
-    .andThen(new InstantCommand(() -> elevator.move(-2)))
-  );
-
-  Command high2Auto = new RelativeDriveTest(
-    new Translation2d(
-      -Meters.convertFrom(6.75, Feet),
-      -Meters.convertFrom(6, Inches)
-    ),
-    Rotation2d.fromDegrees(120),
-    false,
-    0.15
-  ).withTimeout(4).alongWith(
-    new WaitCommand(2.0)
-      .andThen(new InstantCommand(() -> elevator.setGoal(Elevator.MAX_HEIGHT)))
-  )
-  .andThen(new WaitCommand(0.5))
-  .andThen(
-    new TrackReefWithOffset(
-      new Translation2d(
-        -1,
-        0
-      ),
-      Rotation2d.fromDegrees(0)
-    ).andThen(
-      new TrackReefHorizontally(() -> {
-        if(rightCoralSwitch.getAsBoolean()) {
-          return TrackReefHorizontally.Side.RIGHT;
-        } else {
-          return TrackReefHorizontally.Side.LEFT;
-        }
-      })
-    )
-    .andThen(new WaitCommand(0.5))
-    .andThen(
-      new TrackReefHorizontally(() -> {
-        if(rightCoralSwitch.getAsBoolean()) {
-          return TrackReefHorizontally.Side.RIGHT;
-        } else {
-          return TrackReefHorizontally.Side.LEFT;
-        }
-      })
-    )
-    // .andThen(new RelativeDriveTest(
-    //   new Translation2d(
-    //     0.54,
-    //     0
-    //   ),
-    //   Rotation2d.kZero,
-    //   true
-    // ))
-    .andThen(new InstantCommand(() -> {
-      Swerve.getInstance().driveUnsafe(
-        new Translation2d(
-          0.225,
-          0
-        ),
-        0,
-        false,
-        true
-      );
-    }))
-    .andThen(new WaitCommand(2.75))
-    .andThen(new InstantCommand(() -> Swerve.getInstance().drive(Translation2d.kZero, 0, false, false)))
-    .andThen(new InstantCommand(placer::spitCoral))
-  );
-
-  Command high6Auto = new RelativeDriveTest(
-    new Translation2d(
-      -Meters.convertFrom(6.75, Feet),
-      Meters.convertFrom(6, Inches)
-    ),
-    Rotation2d.fromDegrees(-120),
-    false,
-    0.15
-  ).withTimeout(4).alongWith(
-    new WaitCommand(2.0)
-      .andThen(new InstantCommand(() -> elevator.setGoal(Elevator.MAX_HEIGHT)))
-  )
-  .andThen(new WaitCommand(0.5))
-  .andThen(
-    new TrackReefWithOffset(
-      new Translation2d(
-        -1,
-        0
-      ),
-      Rotation2d.fromDegrees(0)
-    ).andThen(
-      new TrackReefHorizontally(() -> {
-        if(rightCoralSwitch.getAsBoolean()) {
-          return TrackReefHorizontally.Side.RIGHT;
-        } else {
-          return TrackReefHorizontally.Side.LEFT;
-        }
-      })
-    )
-    .andThen(
-      new TrackReefHorizontally(() -> {
-        if(rightCoralSwitch.getAsBoolean()) {
-          return TrackReefHorizontally.Side.RIGHT;
-        } else {
-          return TrackReefHorizontally.Side.LEFT;
-        }
-      })
-    )
-    // .andThen(new RelativeDriveTest(
-    //   new Translation2d(
-    //     0.54,
-    //     0
-    //   ),
-    //   Rotation2d.kZero,
-    //   true
-    // ))
-    .andThen(new InstantCommand(() -> {
-      Swerve.getInstance().driveUnsafe(
-        new Translation2d(
-          0.225,
-          0
-        ),
-        0,
-        false,
-        true
-      );
-    }))
-    .andThen(new WaitCommand(2.75))
-    .andThen(new InstantCommand(() -> Swerve.getInstance().drive(Translation2d.kZero, 0, false, false)))
-    .andThen(new InstantCommand(placer::spitCoral))
-  );
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
@@ -543,18 +397,30 @@ public class RobotContainer {
     var isThreeAuto = panel.getRawButton(24);
     var isFourAuto = panel.getRawButton(25);
 
-    if(isOneAuto) return high6Auto;
-    if(isTwoAuto) return high1Auto;
-    if(isThreeAuto) return high2Auto;
+    if(isThreeAuto) return Autos.Reef2(Elevator.MAX_HEIGHT, Side.LEFT);
+    if(isOneAuto) return Autos.Reef6(Elevator.MAX_HEIGHT, Side.RIGHT);
+    if(isTwoAuto) return Autos.Reef1(Elevator.MAX_HEIGHT, Side.RIGHT);
 
-    return new RelativeDriveTest(
-      new Translation2d(
-        -2.0,
-        0.0
-      ),
-      Rotation2d.kZero,
-      true
-    );
+    // return Autos.Reef2(Elevator.MAX_HEIGHT, Side.LEFT);
+    return new InstantCommand();
+
+    // if(isOneAuto) return high1Auto;
+    // if(isTwoAuto) return Autos.Reef2(Elevator.MAX_HEIGHT, Side.LEFT);
+
+    // return new InstantCommand();
+
+    // if(isOneAuto) return high6Auto;
+    // if(isTwoAuto) return high1Auto;
+    // if(isThreeAuto) return high2Auto;
+
+    // return new RelativeDriveTest(
+    //   new Translation2d(
+    //     -2.0,
+    //     0.0
+    //   ),
+    //   Rotation2d.kZero,
+    //   true
+    // );
     
     // return new TurnToAngle(Rotation2d.k180deg).andThen(
     //   new RelativeDriveTest(
