@@ -56,6 +56,8 @@ public class RobotContainer {
   private final Trigger clawOuttake = driver.y();
   private final Trigger clawRaise = driver.b();
   private final Trigger clawLower = driver.a();
+  
+  public final Trigger paradeShoot = driver.back();
 
   // private final JoystickButton TEST_horizontalTrack = new JoystickButton(driver, XboxController.Button.kStart.value);
 
@@ -133,6 +135,12 @@ public class RobotContainer {
   private void configureButtonBindings() {
     /* Driver Buttons */
     // zeroGyro.onTrue(new InstantCommand(() -> Swerve.getInstance().zeroHeading()));
+
+    paradeShoot.whileTrue(new RunCommand(() -> {
+      placer.paradeShoot();
+    }, placer)).onFalse(new InstantCommand(() -> {
+      placer.stop();
+    }, placer));
 
     elevatorUp
       .onTrue(new InstantCommand(() -> elevator.move(7)))

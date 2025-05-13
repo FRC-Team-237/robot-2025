@@ -77,6 +77,11 @@ public class Placer extends SubsystemBase {
     motor2.set(0.25);
   }
 
+  public void paradeShoot() {
+    motor1.set(-1.0);
+    motor2.set(1.0);
+  }
+
   public void spitCoral() {
     double speed = Elevator.getHeight() > Elevator.MAX_HEIGHT - 0.3 ? 0.45 : 0.6;
     motor1.set(-speed);
